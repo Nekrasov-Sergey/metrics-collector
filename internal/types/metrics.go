@@ -1,9 +1,4 @@
-package models
-
-const (
-	Counter = "counter"
-	Gauge   = "gauge"
-)
+package types
 
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.
 // Органичиваясь плоской моделью.
@@ -17,3 +12,10 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"`
 	Hash  string   `json:"hash,omitempty"`
 }
+
+type MetricType string
+
+const (
+	Gauge   MetricType = "gauge"
+	Counter MetricType = "counter"
+)
