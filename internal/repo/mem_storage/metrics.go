@@ -23,7 +23,7 @@ func (m *MemStorage) UpdateCounterMetric(ctx context.Context, metricName string,
 	defer m.Unlock()
 	m.CounterMetrics[metricName] += counterValue
 	logger.C(ctx).Info().
-		Str("тип", string(types.Gauge)).
+		Str("тип", string(types.Counter)).
 		Str("имя", metricName).
 		Int64("значение", m.CounterMetrics[metricName]).
 		Msg("Обновлённая метрика")
