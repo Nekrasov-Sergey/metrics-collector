@@ -20,11 +20,15 @@ build-agent:
 metricstest1: build-server
 	metricstest -test.v -test.run=^TestIteration1$$ -binary-path=cmd/server/server
 
+.PHONY: metricstest2
+metricstest2: build-agent
+	 metricstest -test.v -test.run=^TestIteration2[AB]*$$ -source-path=. -agent-binary-path=cmd/agent/agent
+
 .PHONY: test
 test:
-	@go test -v -cover
+	@go test -v -cover ./...
 
 .PHONY: cover
 cover:
-	@go test -v -coverprofile=cover.out
+	@go test -v -coverprofile=cover.out ./...
 	@go tool cover -html=cover.out -o cover.html

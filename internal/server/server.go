@@ -1,6 +1,8 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
@@ -24,8 +26,13 @@ func Run() {
 	h := handler.New(memStorage)
 	h.RegisterRoutes(r)
 
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
 	l.Info().Msg("Starting server on :8080")
-	if err := r.Run(":8080"); err != nil {
-		l.Error().Err(err).Msg("Error starting server")
+	if err := server.ListenAndServe(); err != nil {
+		l.Fatal().Err(err).Msg("Error starting server")
 	}
 }
