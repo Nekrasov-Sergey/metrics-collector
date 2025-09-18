@@ -24,6 +24,10 @@ metricstest1: build-server
 metricstest2: build-agent
 	 metricstest -test.v -test.run=^TestIteration2[AB]*$$ -source-path=. -agent-binary-path=cmd/agent/agent
 
+.PHONY: metricstest3
+metricstest3: build-server build-agent
+	metricstest -test.v -test.run=^TestIteration3[AB]*$$ -source-path=. -agent-binary-path=cmd/agent/agent -binary-path=cmd/server/server
+
 .PHONY: test
 test:
 	@go test -v -cover ./...

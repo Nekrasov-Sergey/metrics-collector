@@ -2,17 +2,17 @@ package memstorage
 
 import (
 	"sync"
+
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
 type MemStorage struct {
 	sync.RWMutex
-	GaugeMetrics   map[string]float64
-	CounterMetrics map[string]int64
+	Metrics map[types.MetricName]types.Metric
 }
 
 func New() *MemStorage {
 	return &MemStorage{
-		GaugeMetrics:   make(map[string]float64),
-		CounterMetrics: make(map[string]int64),
+		Metrics: make(map[types.MetricName]types.Metric),
 	}
 }
