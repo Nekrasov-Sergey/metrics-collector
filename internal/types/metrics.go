@@ -61,7 +61,7 @@ const (
 type Metric struct {
 	Name  MetricName
 	Type  MetricType
-	Value any
+	Value float64
 }
 
 const (

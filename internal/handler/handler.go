@@ -4,23 +4,28 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
-type RepoInterface interface {
-	UpdateGaugeMetric(ctx context.Context, metricName string, gaugeValue float64)
-	UpdateCounterMetric(ctx context.Context, metricName string, counterValue int64)
+type ServiceInterface interface {
+	UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error
+	GetMetric(ctx context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error)
+	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 }
 
 type Handler struct {
-	repo RepoInterface
+	service ServiceInterface
 }
 
-func New(repo RepoInterface) *Handler {
+func New(service ServiceInterface) *Handler {
 	return &Handler{
-		repo: repo,
+		service: service,
 	}
 }
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/update/:type/:name/:value", h.UpdateMetric)
+	r.GET("/value/:type/:name", h.GetMetric)
+	r.GET("/", h.GetMetrics)
 }

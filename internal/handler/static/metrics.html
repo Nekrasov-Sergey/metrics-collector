@@ -1,0 +1,21 @@
+<html>
+<head>
+    <title>Метрики</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Метрики</h1>
+<table>
+    <tr>
+        <th>Имя</th>
+        <th>Значение</th>
+    </tr>
+    {{range .}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Value}}</td>
+    </tr>
+    {{end}}
+</table>
+</body>
+</html>

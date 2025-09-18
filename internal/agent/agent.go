@@ -28,7 +28,7 @@ func Run(ctx context.Context) {
 	defer tickerReport.Stop()
 
 	metrics := make(map[types.MetricName]types.Metric)
-	var pollCount int64
+	var pollCount float64
 
 	for {
 		select {
@@ -75,40 +75,41 @@ func Run(ctx context.Context) {
 			if !fail {
 				l.Info().Msg("Метрики успешно отправлены")
 			}
+			pollCount = 0
 		}
 	}
 }
 
-type getMetricValue func(memStats *runtime.MemStats) any
+type getMetricValue func(memStats *runtime.MemStats) float64
 
 func getGaugeMetrics() map[types.MetricName]getMetricValue {
 	return map[types.MetricName]getMetricValue{
-		types.Alloc:         func(memStats *runtime.MemStats) any { return memStats.Alloc },
-		types.BuckHashSys:   func(memStats *runtime.MemStats) any { return memStats.BuckHashSys },
-		types.Frees:         func(memStats *runtime.MemStats) any { return memStats.Frees },
-		types.GCCPUFraction: func(memStats *runtime.MemStats) any { return memStats.GCCPUFraction },
-		types.GCSys:         func(memStats *runtime.MemStats) any { return memStats.GCSys },
-		types.HeapAlloc:     func(memStats *runtime.MemStats) any { return memStats.HeapAlloc },
-		types.HeapIdle:      func(memStats *runtime.MemStats) any { return memStats.HeapIdle },
-		types.HeapInuse:     func(memStats *runtime.MemStats) any { return memStats.HeapInuse },
-		types.HeapObjects:   func(memStats *runtime.MemStats) any { return memStats.HeapObjects },
-		types.HeapReleased:  func(memStats *runtime.MemStats) any { return memStats.HeapReleased },
-		types.HeapSys:       func(memStats *runtime.MemStats) any { return memStats.HeapSys },
-		types.LastGC:        func(memStats *runtime.MemStats) any { return memStats.LastGC },
-		types.Lookups:       func(memStats *runtime.MemStats) any { return memStats.Lookups },
-		types.MCacheInuse:   func(memStats *runtime.MemStats) any { return memStats.MCacheInuse },
-		types.MCacheSys:     func(memStats *runtime.MemStats) any { return memStats.MCacheSys },
-		types.MSpanInuse:    func(memStats *runtime.MemStats) any { return memStats.MSpanInuse },
-		types.MSpanSys:      func(memStats *runtime.MemStats) any { return memStats.MSpanSys },
-		types.Mallocs:       func(memStats *runtime.MemStats) any { return memStats.Mallocs },
-		types.NextGC:        func(memStats *runtime.MemStats) any { return memStats.NextGC },
-		types.NumForcedGC:   func(memStats *runtime.MemStats) any { return memStats.NumForcedGC },
-		types.NumGC:         func(memStats *runtime.MemStats) any { return memStats.NumGC },
-		types.OtherSys:      func(memStats *runtime.MemStats) any { return memStats.OtherSys },
-		types.PauseTotalNs:  func(memStats *runtime.MemStats) any { return memStats.PauseTotalNs },
-		types.StackInuse:    func(memStats *runtime.MemStats) any { return memStats.StackInuse },
-		types.StackSys:      func(memStats *runtime.MemStats) any { return memStats.StackSys },
-		types.Sys:           func(memStats *runtime.MemStats) any { return memStats.Sys },
-		types.TotalAlloc:    func(memStats *runtime.MemStats) any { return memStats.TotalAlloc },
+		types.Alloc:         func(memStats *runtime.MemStats) float64 { return float64(memStats.Alloc) },
+		types.BuckHashSys:   func(memStats *runtime.MemStats) float64 { return float64(memStats.BuckHashSys) },
+		types.Frees:         func(memStats *runtime.MemStats) float64 { return float64(memStats.Frees) },
+		types.GCCPUFraction: func(memStats *runtime.MemStats) float64 { return memStats.GCCPUFraction },
+		types.GCSys:         func(memStats *runtime.MemStats) float64 { return float64(memStats.GCSys) },
+		types.HeapAlloc:     func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapAlloc) },
+		types.HeapIdle:      func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapIdle) },
+		types.HeapInuse:     func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapInuse) },
+		types.HeapObjects:   func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapObjects) },
+		types.HeapReleased:  func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapReleased) },
+		types.HeapSys:       func(memStats *runtime.MemStats) float64 { return float64(memStats.HeapSys) },
+		types.LastGC:        func(memStats *runtime.MemStats) float64 { return float64(memStats.LastGC) },
+		types.Lookups:       func(memStats *runtime.MemStats) float64 { return float64(memStats.Lookups) },
+		types.MCacheInuse:   func(memStats *runtime.MemStats) float64 { return float64(memStats.MCacheInuse) },
+		types.MCacheSys:     func(memStats *runtime.MemStats) float64 { return float64(memStats.MCacheSys) },
+		types.MSpanInuse:    func(memStats *runtime.MemStats) float64 { return float64(memStats.MSpanInuse) },
+		types.MSpanSys:      func(memStats *runtime.MemStats) float64 { return float64(memStats.MSpanSys) },
+		types.Mallocs:       func(memStats *runtime.MemStats) float64 { return float64(memStats.Mallocs) },
+		types.NextGC:        func(memStats *runtime.MemStats) float64 { return float64(memStats.NextGC) },
+		types.NumForcedGC:   func(memStats *runtime.MemStats) float64 { return float64(memStats.NumForcedGC) },
+		types.NumGC:         func(memStats *runtime.MemStats) float64 { return float64(memStats.NumGC) },
+		types.OtherSys:      func(memStats *runtime.MemStats) float64 { return float64(memStats.OtherSys) },
+		types.PauseTotalNs:  func(memStats *runtime.MemStats) float64 { return float64(memStats.PauseTotalNs) },
+		types.StackInuse:    func(memStats *runtime.MemStats) float64 { return float64(memStats.StackInuse) },
+		types.StackSys:      func(memStats *runtime.MemStats) float64 { return float64(memStats.StackSys) },
+		types.Sys:           func(memStats *runtime.MemStats) float64 { return float64(memStats.Sys) },
+		types.TotalAlloc:    func(memStats *runtime.MemStats) float64 { return float64(memStats.TotalAlloc) },
 	}
 }

@@ -2,16 +2,16 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
+	"github.com/Nekrasov-Sergey/metrics-collector/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) UpdateMetric(c *gin.Context) {
+func (h *Handler) GetMetric(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metricName := types.MetricName(c.Param("name"))
@@ -20,33 +20,22 @@ func (h *Handler) UpdateMetric(c *gin.Context) {
 		return
 	}
 
-	var value float64
-	var err error
-
 	metricTyp := types.MetricType(c.Param("type"))
 	switch metricTyp {
-	case types.Gauge:
-		value, err = strconv.ParseFloat(c.Param("value"), 64)
-		if err != nil {
-			logger.Error(c, errors.Wrap(err, "значение метрики не float64"), http.StatusBadRequest)
-			return
-		}
-	case types.Counter:
-		valueInt, err := strconv.ParseInt(c.Param("value"), 10, 64)
-		if err != nil {
-			logger.Error(c, errors.Wrap(err, "значение метрики не int64"), http.StatusBadRequest)
-			return
-		}
-		value = float64(valueInt)
+	case types.Gauge, types.Counter:
 	default:
 		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metricTyp), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.UpdateMetric(ctx, metricTyp, metricName, value); err != nil {
+	metric, err := h.service.GetMetric(ctx, metricTyp, metricName)
+	if err != nil {
+		if errors.Is(err, errcodes.ErrMetricNotFound) {
+			logger.Error(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
+			return
+		}
 		logger.Error(c, err, http.StatusInternalServerError)
 		return
 	}
-
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, metric.Value)
 }

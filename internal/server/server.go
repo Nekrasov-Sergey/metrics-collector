@@ -8,6 +8,7 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/handler"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/repo/mem_storage"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/service"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -23,7 +24,8 @@ func Run() {
 	r := NewGinRouter(l)
 
 	memStorage := memstorage.New()
-	h := handler.New(memStorage)
+	srv := service.New(memStorage)
+	h := handler.New(srv)
 	h.RegisterRoutes(r)
 
 	server := &http.Server{
