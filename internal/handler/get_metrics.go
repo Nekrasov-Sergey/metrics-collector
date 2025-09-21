@@ -31,8 +31,7 @@ func (h *Handler) GetMetrics(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 	c.Header("Content-Type", "text/html; charset=utf-8")
-	err = tmpl.Execute(c.Writer, metrics)
-	if err != nil {
+	if err := tmpl.Execute(c.Writer, metrics); err != nil {
 		logger.Error(c, errors.WithStack(err), http.StatusInternalServerError)
 		return
 	}

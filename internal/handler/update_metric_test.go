@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/handler"
-	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/repo/mem_storage"
+	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/repository/mem_storage"
 )
 
 func TestHandler_UpdateMetric(t *testing.T) {
@@ -97,11 +97,11 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			memStorage := memstorage.New()
 			h := handler.New(memStorage)
 			h.RegisterRoutes(r)
-			srv := httptest.NewServer(r)
-			defer srv.Close()
+			server := httptest.NewServer(r)
+			defer server.Close()
 
 			client := resty.New()
-			resp, err := client.R().Post(srv.URL + tt.args.url)
+			resp, err := client.R().Post(server.URL + tt.args.url)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.code, resp.StatusCode())
 			if tt.want.body != "" {

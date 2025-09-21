@@ -1,9 +1,5 @@
 package types
 
-import (
-	"time"
-)
-
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.
 // Органичиваясь плоской моделью.
 // Delta и Value объявлены через указатели,
@@ -18,6 +14,10 @@ import (
 //}
 
 type MetricType string
+
+func (t MetricType) IsValid() bool {
+	return t == Gauge || t == Counter
+}
 
 const (
 	Gauge   MetricType = "gauge"
@@ -63,8 +63,3 @@ type Metric struct {
 	Type  MetricType
 	Value float64
 }
-
-const (
-	PollInterval   = 2 * time.Second
-	ReportInterval = 10 * time.Second
-)
