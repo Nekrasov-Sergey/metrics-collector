@@ -4,8 +4,8 @@ import (
 	"context"
 	"sort"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -13,7 +13,7 @@ func (m *MemStorage) UpdateMetric(ctx context.Context, typ types.MetricType, nam
 	m.Lock()
 	defer m.Unlock()
 
-	m.Metrics[name] = types.Metric{
+	m.metrics[name] = types.Metric{
 		Name:  name,
 		Type:  typ,
 		Value: value,
@@ -31,7 +31,7 @@ func (m *MemStorage) GetMetric(_ context.Context, typ types.MetricType, name typ
 	m.RLock()
 	defer m.RUnlock()
 
-	metric, ok := m.Metrics[name]
+	metric, ok := m.metrics[name]
 	if !ok {
 		return types.Metric{}, errcodes.ErrMetricNotFound
 	}
@@ -47,8 +47,8 @@ func (m *MemStorage) GetMetrics(_ context.Context) (metrics []types.Metric, err 
 	m.RLock()
 	defer m.RUnlock()
 
-	metrics = make([]types.Metric, 0, len(m.Metrics))
-	for _, metric := range m.Metrics {
+	metrics = make([]types.Metric, 0, len(m.metrics))
+	for _, metric := range m.metrics {
 		metrics = append(metrics, metric)
 	}
 	sort.SliceStable(metrics, func(i, j int) bool {

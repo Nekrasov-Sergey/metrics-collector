@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 )
 
 func (s *Service) UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error {

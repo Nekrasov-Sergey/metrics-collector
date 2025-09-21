@@ -8,17 +8,17 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
-type ServiceInterface interface {
+type Service interface {
 	UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error
 	GetMetric(ctx context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error)
 	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 }
 
 type Handler struct {
-	service ServiceInterface
+	service Service
 }
 
-func New(service ServiceInterface) *Handler {
+func New(service Service) *Handler {
 	return &Handler{
 		service: service,
 	}

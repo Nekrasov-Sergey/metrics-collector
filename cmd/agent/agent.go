@@ -1,11 +1,13 @@
 package main
 
 import (
-	"context"
+	"os"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent"
 )
 
 func main() {
-	agent.Run(context.Background())
+	if err := agent.Run(); err != nil {
+		os.Exit(1)
+	}
 }

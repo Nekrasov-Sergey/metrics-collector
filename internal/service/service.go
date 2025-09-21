@@ -6,16 +6,16 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
-type RepoInterface interface {
+type Repository interface {
 	UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error
 	GetMetric(_ context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error)
 	GetMetrics(_ context.Context) (metrics []types.Metric, err error)
 }
 
 type Service struct {
-	repo RepoInterface
+	repo Repository
 }
 
-func New(repo RepoInterface) *Service {
+func New(repo Repository) *Service {
 	return &Service{repo: repo}
 }

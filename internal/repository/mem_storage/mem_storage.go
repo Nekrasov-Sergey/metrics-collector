@@ -8,11 +8,11 @@ import (
 
 type MemStorage struct {
 	sync.RWMutex
-	Metrics map[types.MetricName]types.Metric
+	metrics map[types.MetricName]types.Metric
 }
 
 func New() *MemStorage {
 	return &MemStorage{
-		Metrics: make(map[types.MetricName]types.Metric),
+		metrics: make(map[types.MetricName]types.Metric),
 	}
 }

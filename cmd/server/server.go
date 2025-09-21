@@ -1,9 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
 )
 
 func main() {
-	server.Run()
+	if err := server.Run(); err != nil {
+		os.Exit(1)
+	}
 }

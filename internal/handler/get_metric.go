@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -21,9 +21,7 @@ func (h *Handler) GetMetric(c *gin.Context) {
 	}
 
 	metricTyp := types.MetricType(c.Param("type"))
-	switch metricTyp {
-	case types.Gauge, types.Counter:
-	default:
+	if !metricTyp.IsValid() {
 		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metricTyp), http.StatusBadRequest)
 		return
 	}

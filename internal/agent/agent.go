@@ -2,30 +2,39 @@ package agent
 
 import (
 	"context"
-	"fmt"
 	"math/rand/v2"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog"
 
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func Run(ctx context.Context) {
-	l := logger.New()
-	l.Info().Msg("Запущен агент для сбора метрик")
+type Agent struct {
+	client *resty.Client
+	config *agentconfig.Config
+	logger zerolog.Logger
+}
 
-	memStats := &runtime.MemStats{}
-	gaugeMetrics := getGaugeMetrics()
+func New(client *resty.Client, config *agentconfig.Config, logger zerolog.Logger) *Agent {
+	return &Agent{
+		client: client,
+		config: config,
+		logger: logger,
+	}
+}
 
-	client := resty.New()
+func (a *Agent) Run(ctx context.Context) error {
+	a.logger.Info().Msg("Запущен агент для сбора метрик")
 
-	tickerPoll := time.NewTicker(types.PollInterval)
-	defer tickerPoll.Stop()
-	tickerReport := time.NewTicker(types.ReportInterval)
-	defer tickerReport.Stop()
+	pollTicker := time.NewTicker(time.Duration(a.config.PollInterval))
+	reportTicker := time.NewTicker(time.Duration(a.config.ReportInterval))
+	defer pollTicker.Stop()
+	defer reportTicker.Stop()
 
 	metrics := make(map[types.MetricName]types.Metric)
 	var pollCount float64
@@ -33,51 +42,64 @@ func Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			l.Info().Msg("Агент успешно остановлен")
-			return
-		case <-tickerPoll.C:
-			runtime.ReadMemStats(memStats)
-			for name, f := range gaugeMetrics {
-				metrics[name] = types.Metric{
-					Name:  name,
-					Type:  types.Gauge,
-					Value: f(memStats),
-				}
+			a.logger.Info().Msg("Агент остановлен")
+			return nil
+		case <-pollTicker.C:
+			pollCount = a.Poll(metrics, pollCount)
+			a.logger.Info().Msg("Метрики собраны")
+		case <-reportTicker.C:
+			isSuccess := a.Report(metrics)
+			if isSuccess {
+				a.logger.Info().Msgf("Отправлено %d метрик на сервер %s", len(metrics), a.config.Addr)
+				pollCount = 0
 			}
-			metrics[types.RandomValue] = types.Metric{
-				Name:  types.RandomValue,
-				Type:  types.Gauge,
-				Value: rand.Float64(),
-			}
-			pollCount++
-			metrics[types.PollCount] = types.Metric{
-				Name:  types.PollCount,
-				Type:  types.Counter,
-				Value: pollCount,
-			}
-			l.Info().Msg("Метрики успешно собраны")
-		case <-tickerReport.C:
-			fail := false
-			for _, metric := range metrics {
-				_, err := client.R().
-					SetPathParams(map[string]string{
-						"type":  string(metric.Type),
-						"name":  string(metric.Name),
-						"value": fmt.Sprintf("%v", metric.Value),
-					}).
-					Post("http://localhost:8080/update/{type}/{name}/{value}")
-				if err != nil {
-					l.Error().Err(err).Send()
-					fail = true
-					continue
-				}
-			}
-			if !fail {
-				l.Info().Msg("Метрики успешно отправлены")
-			}
-			pollCount = 0
 		}
 	}
+}
+
+func (a *Agent) Poll(metrics map[types.MetricName]types.Metric, pollCount float64) float64 {
+	memStats := &runtime.MemStats{}
+	runtime.ReadMemStats(memStats)
+
+	for name, f := range getGaugeMetrics() {
+		metrics[name] = types.Metric{
+			Name:  name,
+			Type:  types.Gauge,
+			Value: f(memStats),
+		}
+	}
+	metrics[types.RandomValue] = types.Metric{
+		Name:  types.RandomValue,
+		Type:  types.Gauge,
+		Value: rand.Float64(),
+	}
+	pollCount++
+	metrics[types.PollCount] = types.Metric{
+		Name:  types.PollCount,
+		Type:  types.Counter,
+		Value: pollCount,
+	}
+
+	return pollCount
+}
+
+func (a *Agent) Report(metrics map[types.MetricName]types.Metric) bool {
+	isSuccess := true
+	for _, metric := range metrics {
+		_, err := a.client.R().
+			SetPathParams(map[string]string{
+				"type":  string(metric.Type),
+				"name":  string(metric.Name),
+				"value": strconv.FormatFloat(metric.Value, 'f', -1, 64),
+			}).
+			Post(a.config.Addr + "/update/{type}/{name}/{value}")
+		if err != nil {
+			a.logger.Error().Err(err).Send()
+			isSuccess = false
+			break
+		}
+	}
+	return isSuccess
 }
 
 type getMetricValue func(memStats *runtime.MemStats) float64
