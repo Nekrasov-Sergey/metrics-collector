@@ -92,7 +92,7 @@ func (a *Agent) Report(metrics map[types.MetricName]types.Metric) bool {
 				"name":  string(metric.Name),
 				"value": strconv.FormatFloat(metric.Value, 'f', -1, 64),
 			}).
-			Post(a.config.Addr + "/update/{type}/{name}/{value}")
+			Post("http://" + a.config.Addr + "/update/{type}/{name}/{value}")
 		if err != nil {
 			a.logger.Error().Err(err).Send()
 			isSuccess = false

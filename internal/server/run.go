@@ -10,9 +10,13 @@ import (
 )
 
 func Run() error {
-	config := serverconfig.New()
 	l := logger.New()
 	r := router.New(l)
+
+	config, err := serverconfig.New()
+	if err != nil {
+		return err
+	}
 
 	memStorage := memstorage.New()
 	srv := service.New(memStorage)

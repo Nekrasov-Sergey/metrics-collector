@@ -3,14 +3,17 @@ package serverconfig
 import (
 	"flag"
 
+	"github.com/caarlos0/env/v11"
+	"github.com/pkg/errors"
+
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 )
 
 type Config struct {
-	Addr string
+	Addr string `env:"ADDRESS"`
 }
 
-func New() *Config {
+func New() (*Config, error) {
 	addr := config.NetAddress{
 		Host: "localhost",
 		Port: 8080,
@@ -19,7 +22,13 @@ func New() *Config {
 
 	flag.Parse()
 
-	return &Config{
+	cfg := Config{
 		Addr: addr.String(),
 	}
+
+	if err := env.Parse(&cfg); err != nil {
+		return nil, errors.Wrap(err, "не удалось распарсить переменные окружения в конфиг")
+	}
+
+	return &cfg, nil
 }
