@@ -16,9 +16,13 @@ func Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	client := resty.New()
-	config := agentconfig.New()
 	l := logger.New()
+	client := resty.New()
+
+	config, err := agentconfig.New()
+	if err != nil {
+		return err
+	}
 
 	agent := New(client, config, l)
 	return agent.Run(ctx)

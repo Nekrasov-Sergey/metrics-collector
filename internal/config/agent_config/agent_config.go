@@ -2,10 +2,10 @@ package agentconfig
 
 import (
 	"flag"
-	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
@@ -26,13 +26,22 @@ func (d *SecondDuration) Set(s string) error {
 	return nil
 }
 
-type Config struct {
-	Addr           string
-	PollInterval   SecondDuration
-	ReportInterval SecondDuration
+func (d *SecondDuration) UnmarshalText(text []byte) error {
+	seconds, err := strconv.Atoi(string(text))
+	if err != nil {
+		return errors.Wrap(err, "значение должно быть в секундах")
+	}
+	*d = SecondDuration(time.Duration(seconds) * time.Second)
+	return nil
 }
 
-func New() *Config {
+type Config struct {
+	Addr           string         `env:"ADDRESS"`
+	PollInterval   SecondDuration `env:"POLL_INTERVAL"`
+	ReportInterval SecondDuration `env:"REPORT_INTERVAL"`
+}
+
+func New() (*Config, error) {
 	addr := config.NetAddress{
 		Host: "localhost",
 		Port: 8080,
@@ -46,14 +55,15 @@ func New() *Config {
 
 	flag.Parse()
 
-	u := url.URL{
-		Scheme: "http",
-		Host:   addr.String(),
-	}
-
-	return &Config{
-		Addr:           u.String(),
+	cfg := Config{
+		Addr:           addr.String(),
 		PollInterval:   pollInterval,
 		ReportInterval: reportInterval,
 	}
+
+	if err := env.Parse(&cfg); err != nil {
+		return nil, errors.Wrap(err, "не удалось распарсить переменные окружения в конфиг")
+	}
+
+	return &cfg, nil
 }
