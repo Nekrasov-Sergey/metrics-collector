@@ -18,7 +18,6 @@ func LoggerMiddleware(baseLogger zerolog.Logger) gin.HandlerFunc {
 		l := baseLogger.With().
 			Str("method", c.Request.Method).
 			Str("url", c.Request.URL.Path).
-			Str("host", c.Request.Host).
 			Str("req_id", uuid.NewString()[:8]).
 			Logger()
 
@@ -30,8 +29,9 @@ func LoggerMiddleware(baseLogger zerolog.Logger) gin.HandlerFunc {
 		c.Next()
 
 		l = l.With().
-			Dur("req_time_ms", time.Since(start)).
 			Int("status", c.Writer.Status()).
+			Str("duration", time.Since(start).String()).
+			Int("size", c.Writer.Size()).
 			Logger()
 
 		if len(c.Errors) > 0 {
