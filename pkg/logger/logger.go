@@ -18,7 +18,7 @@ const LogKey CtxKey = "logger"
 
 // New настраивает формат вывода zerolog
 func New() zerolog.Logger {
-	keys := []string{"method", "url", "host", "req_id", "req_time_ms", "status", "stack"}
+	keys := []string{"method", "url", "req_id", "status", "duration", "size", "stack"}
 	consoleWriter := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: time.DateTime,
