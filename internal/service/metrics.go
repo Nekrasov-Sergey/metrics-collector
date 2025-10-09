@@ -7,21 +7,22 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (s *Service) UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error {
-	if typ == types.Counter {
-		metric, err := s.GetMetric(ctx, typ, name)
+func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
+	if metric.MType == types.Counter {
+		counterMetric, err := s.GetMetric(ctx, metric)
 		if err != nil && !errors.Is(err, errcodes.ErrMetricNotFound) {
 			return err
 		}
-		value += metric.Value
+		*metric.Delta += utils.Deref(counterMetric.Delta)
 	}
-	return s.repo.UpdateMetric(ctx, typ, name, value)
+	return s.repo.UpdateMetric(ctx, metric)
 }
 
-func (s *Service) GetMetric(ctx context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error) {
-	return s.repo.GetMetric(ctx, typ, name)
+func (s *Service) GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error) {
+	return s.repo.GetMetric(ctx, rowMetric)
 }
 
 func (s *Service) GetMetrics(ctx context.Context) (metrics []types.Metric, err error) {

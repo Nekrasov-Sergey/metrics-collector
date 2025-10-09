@@ -9,8 +9,8 @@ import (
 )
 
 type Service interface {
-	UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error
-	GetMetric(ctx context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error)
+	UpdateMetric(ctx context.Context, metric types.Metric) error
+	GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error)
 	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 }
 
@@ -25,7 +25,10 @@ func New(service Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
-	r.POST("/update/:type/:name/:value", h.UpdateMetric)
-	r.GET("/value/:type/:name", h.GetMetric)
+	r.POST("/update/:type/:name/:value", h.UpdateMetricOld)
+	r.GET("/value/:type/:name", h.GetMetricOld)
 	r.GET("/", h.GetMetrics)
+
+	r.POST("/update", h.UpdateMetric)
+	r.POST("/value", h.GetMetric)
 }
