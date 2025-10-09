@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
@@ -12,20 +11,18 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) GetMetric(c *gin.Context) {
+func (h *Handler) GetMetricOld(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var metric types.Metric
-	if err := c.ShouldBindJSON(&metric); err != nil {
-		logger.Error(c, errors.Wrap(err, "не удалось распарсить тело запроса"), http.StatusBadRequest)
-		return
-	}
 
+	metric.Name = types.MetricName(c.Param("name"))
 	if metric.Name == "" {
 		logger.Error(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
 		return
 	}
 
+	metric.MType = types.MetricType(c.Param("type"))
 	if !metric.MType.IsValid() {
 		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
 		return
@@ -41,10 +38,9 @@ func (h *Handler) GetMetric(c *gin.Context) {
 		return
 	}
 
-	data, err := json.Marshal(metric)
-	if err != nil {
-		logger.Error(c, errors.Wrap(err, "не удалось спарсить метрику в JSON"), http.StatusInternalServerError)
+	if metric.MType == types.Gauge {
+		c.JSON(http.StatusOK, metric.Value)
 		return
 	}
-	c.Data(http.StatusOK, "application/json", data)
+	c.JSON(http.StatusOK, metric.Delta)
 }

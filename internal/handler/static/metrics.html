@@ -1,4 +1,4 @@
-<html>
+<html lang="ru">
 <head>
     <title>Метрики</title>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@
     {{range .}}
     <tr>
         <td>{{.Name}}</td>
-        <td>{{.Value}}</td>
+        <td>{{if .Value}}{{.Value}}{{else}}{{.Delta}}{{end}}</td>
     </tr>
     {{end}}
 </table>

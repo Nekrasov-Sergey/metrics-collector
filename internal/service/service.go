@@ -7,9 +7,9 @@ import (
 )
 
 type Repository interface {
-	UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error
-	GetMetric(_ context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error)
-	GetMetrics(_ context.Context) (metrics []types.Metric, err error)
+	UpdateMetric(ctx context.Context, metric types.Metric) error
+	GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error)
+	GetMetrics(_ context.Context) ([]types.Metric, error)
 }
 
 type Service struct {

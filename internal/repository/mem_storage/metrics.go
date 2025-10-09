@@ -7,52 +7,60 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (m *MemStorage) UpdateMetric(ctx context.Context, typ types.MetricType, name types.MetricName, value float64) error {
+func (m *MemStorage) UpdateMetric(ctx context.Context, metric types.Metric) error {
 	m.Lock()
 	defer m.Unlock()
 
-	m.metrics[name] = types.Metric{
-		Name:  name,
-		Type:  typ,
-		Value: value,
+	m.metrics[metric.Name] = metric
+	switch metric.MType {
+	case types.Gauge:
+		logger.C(ctx).Info().
+			Str("тип", string(types.Gauge)).
+			Str("имя", string(metric.Name)).
+			Float64("значение", utils.Deref(metric.Value)).
+			Msg("Обновлённая метрика")
+	case types.Counter:
+		logger.C(ctx).Info().
+			Str("тип", string(types.Counter)).
+			Str("имя", string(metric.Name)).
+			Int64("значение", utils.Deref(metric.Delta)).
+			Msg("Обновлённая метрика")
 	}
-	logger.C(ctx).Info().
-		Str("тип", string(typ)).
-		Str("имя", string(name)).
-		Any("значение", value).
-		Msg("Обновлённая метрика")
 
 	return nil
 }
 
-func (m *MemStorage) GetMetric(_ context.Context, typ types.MetricType, name types.MetricName) (metric types.Metric, err error) {
+func (m *MemStorage) GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	metric, ok := m.metrics[name]
+	metric, ok := m.metrics[rowMetric.Name]
 	if !ok {
 		return types.Metric{}, errcodes.ErrMetricNotFound
 	}
 
-	if metric.Type != typ {
+	if metric.MType != rowMetric.MType {
 		return types.Metric{}, errcodes.ErrMetricNotFound
 	}
 
 	return metric, nil
 }
 
-func (m *MemStorage) GetMetrics(_ context.Context) (metrics []types.Metric, err error) {
+func (m *MemStorage) GetMetrics(_ context.Context) ([]types.Metric, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	metrics = make([]types.Metric, 0, len(m.metrics))
+	metrics := make([]types.Metric, 0, len(m.metrics))
 	for _, metric := range m.metrics {
 		metrics = append(metrics, metric)
 	}
+
 	sort.SliceStable(metrics, func(i, j int) bool {
 		return metrics[i].Name < metrics[j].Name
 	})
+
 	return metrics, nil
 }

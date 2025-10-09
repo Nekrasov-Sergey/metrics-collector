@@ -50,6 +50,10 @@ func New() zerolog.Logger {
 
 // Error обрабатывает ошибку: логирует её через zerolog и формирует JSON-ответ
 func Error(c *gin.Context, err error, status int) {
+	if err == nil {
+		c.AbortWithStatus(status)
+		return
+	}
 	c.JSON(status, gin.H{
 		"error": err.Error(),
 	})

@@ -2,39 +2,43 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (h *Handler) UpdateMetric(c *gin.Context) {
+func (h *Handler) UpdateMetricOld(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var metric types.Metric
-	if err := c.ShouldBindJSON(&metric); err != nil {
-		logger.Error(c, errors.Wrap(err, "не удалось распарсить тело запроса"), http.StatusBadRequest)
-		return
-	}
 
+	metric.Name = types.MetricName(c.Param("name"))
 	if metric.Name == "" {
 		logger.Error(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
 		return
 	}
 
+	metric.MType = types.MetricType(c.Param("type"))
 	switch metric.MType {
 	case types.Gauge:
-		if metric.Value == nil {
-			logger.Error(c, errors.New("значение метрики Gauge не задано"), http.StatusBadRequest)
+		value, err := strconv.ParseFloat(c.Param("value"), 64)
+		if err != nil {
+			logger.Error(c, errors.Wrap(err, "значение метрики не float64"), http.StatusBadRequest)
 			return
 		}
+		metric.Value = utils.Ptr(value)
 	case types.Counter:
-		if metric.Delta == nil {
-			logger.Error(c, errors.New("значение метрики Counter не задано"), http.StatusBadRequest)
+		value, err := strconv.ParseInt(c.Param("value"), 10, 64)
+		if err != nil {
+			logger.Error(c, errors.Wrap(err, "значение метрики не int64"), http.StatusBadRequest)
 			return
 		}
+		metric.Delta = utils.Ptr(value)
 	default:
 		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
 		return
