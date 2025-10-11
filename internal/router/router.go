@@ -8,6 +8,6 @@ import (
 func New(l zerolog.Logger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), LoggerMiddleware(l))
+	r.Use(gin.Recovery(), LoggerMiddleware(l), CompressMiddleware())
 	return r
 }
