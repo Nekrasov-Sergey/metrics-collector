@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
@@ -41,10 +40,5 @@ func (h *Handler) GetMetric(c *gin.Context) {
 		return
 	}
 
-	data, err := json.Marshal(metric)
-	if err != nil {
-		logger.Error(c, errors.Wrap(err, "не удалось спарсить метрику в JSON"), http.StatusInternalServerError)
-		return
-	}
-	c.Data(http.StatusOK, "application/json", data)
+	c.JSON(http.StatusOK, metric)
 }
