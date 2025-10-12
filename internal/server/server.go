@@ -3,9 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -29,10 +26,8 @@ func New(handler http.Handler, config *serverconfig.Config, logger zerolog.Logge
 	}
 }
 
-func (s *Server) Run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-
+func (s *Server) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		s.logger.Info().Msgf("Сервер запущен на %s", s.httpServer.Addr)
 		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -46,7 +41,7 @@ func (s *Server) Run() error {
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
-	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
+	if err := s.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
 
@@ -56,8 +51,7 @@ func (s *Server) Run() error {
 
 func (s *Server) Shutdown(shutdownCtx context.Context) error {
 	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
-		s.logger.Error().Err(err).Msg("Ошибка при остановке сервера")
-		return err
+		return errors.Wrap(err, "ошибка при остановке сервера")
 	}
 	return nil
 }

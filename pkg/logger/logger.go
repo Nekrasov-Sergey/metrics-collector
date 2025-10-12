@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -56,6 +57,18 @@ func Error(c *gin.Context, err error, status int) {
 	}
 	c.JSON(status, gin.H{
 		"error": err.Error(),
+	})
+	_ = c.Error(err)
+}
+
+// InternalServerError логирует ошибку и возвращает 500 Internal Server Error
+func InternalServerError(c *gin.Context, err error) {
+	if err == nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"error": http.StatusText(http.StatusInternalServerError),
 	})
 	_ = c.Error(err)
 }

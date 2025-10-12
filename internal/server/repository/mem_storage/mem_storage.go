@@ -7,12 +7,13 @@ import (
 )
 
 type MemStorage struct {
-	sync.RWMutex
+	mu      *sync.Mutex
 	metrics map[types.MetricName]types.Metric
 }
 
 func New() *MemStorage {
 	return &MemStorage{
+		mu:      &sync.Mutex{},
 		metrics: make(map[types.MetricName]types.Metric),
 	}
 }

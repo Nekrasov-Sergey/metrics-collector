@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent"
-	agentconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -20,10 +21,10 @@ func TestRunAgent(t *testing.T) {
 	ts := httptest.NewServer(gin.New())
 	defer ts.Close()
 
-	config := &agentconfig.Config{
+	cfg := &agentconfig.Config{
 		Addr:           ts.URL,
-		PollInterval:   agentconfig.SecondDuration(100 * time.Millisecond),
-		ReportInterval: agentconfig.SecondDuration(200 * time.Millisecond),
+		PollInterval:   config.SecondDuration(100 * time.Millisecond),
+		ReportInterval: config.SecondDuration(200 * time.Millisecond),
 	}
 
 	client := resty.New()
@@ -31,7 +32,7 @@ func TestRunAgent(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()
 
-	a := agent.New(client, config, logger.New())
+	a := agent.New(client, cfg, logger.New())
 	err := a.Run(ctx)
 	require.NoError(t, err)
 }

@@ -11,8 +11,8 @@ import (
 )
 
 func (m *MemStorage) UpdateMetric(ctx context.Context, metric types.Metric) error {
-	m.Lock()
-	defer m.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.metrics[metric.Name] = metric
 	switch metric.MType {
@@ -34,8 +34,8 @@ func (m *MemStorage) UpdateMetric(ctx context.Context, metric types.Metric) erro
 }
 
 func (m *MemStorage) GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error) {
-	m.RLock()
-	defer m.RUnlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	metric, ok := m.metrics[rowMetric.Name]
 	if !ok {
@@ -50,8 +50,8 @@ func (m *MemStorage) GetMetric(_ context.Context, rowMetric types.Metric) (types
 }
 
 func (m *MemStorage) GetMetrics(_ context.Context) ([]types.Metric, error) {
-	m.RLock()
-	defer m.RUnlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	metrics := make([]types.Metric, 0, len(m.metrics))
 	for _, metric := range m.metrics {
@@ -63,4 +63,15 @@ func (m *MemStorage) GetMetrics(_ context.Context) ([]types.Metric, error) {
 	})
 
 	return metrics, nil
+}
+
+func (m *MemStorage) UpdateMetrics(_ context.Context, metrics []types.Metric) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, metric := range metrics {
+		m.metrics[metric.Name] = metric
+	}
+
+	return nil
 }

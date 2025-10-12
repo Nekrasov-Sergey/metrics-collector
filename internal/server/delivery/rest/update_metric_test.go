@@ -1,6 +1,7 @@
-package handler_test
+package rest_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,8 +10,10 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/handler"
-	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/repository/mem_storage"
+	serverconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 )
 
 func TestHandler_UpdateMetric(t *testing.T) {
@@ -94,8 +97,10 @@ func TestHandler_UpdateMetric(t *testing.T) {
 			t.Parallel()
 
 			r := gin.New()
+			cfg := &serverconfig.Config{}
 			memStorage := memstorage.New()
-			h := handler.New(memStorage)
+			srv := service.New(context.Background(), memStorage, cfg)
+			h := rest.New(srv, cfg)
 			h.RegisterRoutes(r)
 			server := httptest.NewServer(r)
 			defer server.Close()

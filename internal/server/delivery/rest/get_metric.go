@@ -1,4 +1,4 @@
-package handler
+package rest
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) GetMetric(c *gin.Context) {
+func (h *Handler) getMetric(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var metric types.Metric
@@ -36,7 +36,7 @@ func (h *Handler) GetMetric(c *gin.Context) {
 			logger.Error(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
 			return
 		}
-		logger.Error(c, err, http.StatusInternalServerError)
+		logger.InternalServerError(c, err)
 		return
 	}
 
