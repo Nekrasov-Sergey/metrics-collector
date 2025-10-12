@@ -5,11 +5,13 @@ import (
 	"compress/gzip"
 	"context"
 	"math/rand/v2"
+	"net/url"
 	"runtime"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/goccy/go-json"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
@@ -90,15 +92,22 @@ func (a *Agent) Report(metrics map[types.MetricName]types.Metric) bool {
 	for _, metric := range metrics {
 		compressedMetric, err := a.getCompressedMetric(metric)
 		if err != nil {
+			a.logger.Error().Err(err).Msg("Не удалось сжать метрику")
+			return false
+		}
+
+		path, err := url.JoinPath("http://", a.config.Addr, "/update")
+		if err != nil {
+			a.logger.Error().Err(err).Msg("Не удалось сформировать url")
 			return false
 		}
 
 		_, err = a.client.R().
 			SetHeader("Content-Encoding", "gzip").
 			SetBody(compressedMetric).
-			Post("http://" + a.config.Addr + "/update")
+			Post(path)
 		if err != nil {
-			a.logger.Error().Err(err).Msg("не удалось отправить метрику")
+			a.logger.Error().Err(err).Msg("Не удалось отправить метрику")
 			return false
 		}
 	}
@@ -111,18 +120,15 @@ func (a *Agent) getCompressedMetric(metric types.Metric) ([]byte, error) {
 
 	data, err := json.Marshal(metric)
 	if err != nil {
-		a.logger.Error().Err(err).Msg("не удалось спарсить метрику")
-		return nil, err
+		return nil, errors.Wrap(err, "не удалось спарсить метрику в json")
 	}
 
 	if _, err := zw.Write(data); err != nil {
-		a.logger.Error().Err(err).Msg("не удалось записать данные для сжатия")
-		return nil, err
+		return nil, errors.Wrap(err, "не удалось записать данные для сжатия")
 	}
 
 	if err := zw.Close(); err != nil {
-		a.logger.Error().Err(err).Msg("не удалось сжать данные")
-		return nil, err
+		return nil, errors.Wrap(err, "не удалось сжать данные")
 	}
 
 	return b.Bytes(), nil

@@ -2,7 +2,6 @@ package agentconfig
 
 import (
 	"flag"
-	"strconv"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -11,34 +10,10 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 )
 
-type SecondDuration time.Duration
-
-func (d *SecondDuration) String() string {
-	return time.Duration(*d).String()
-}
-
-func (d *SecondDuration) Set(s string) error {
-	seconds, err := strconv.Atoi(s)
-	if err != nil {
-		return errors.Wrap(err, "значение должно быть в секундах")
-	}
-	*d = SecondDuration(time.Duration(seconds) * time.Second)
-	return nil
-}
-
-func (d *SecondDuration) UnmarshalText(text []byte) error {
-	seconds, err := strconv.Atoi(string(text))
-	if err != nil {
-		return errors.Wrap(err, "значение должно быть в секундах")
-	}
-	*d = SecondDuration(time.Duration(seconds) * time.Second)
-	return nil
-}
-
 type Config struct {
-	Addr           string         `env:"ADDRESS"`
-	PollInterval   SecondDuration `env:"POLL_INTERVAL"`
-	ReportInterval SecondDuration `env:"REPORT_INTERVAL"`
+	Addr           string                `env:"ADDRESS"`
+	PollInterval   config.SecondDuration `env:"POLL_INTERVAL"`
+	ReportInterval config.SecondDuration `env:"REPORT_INTERVAL"`
 }
 
 func New() (*Config, error) {
@@ -48,10 +23,10 @@ func New() (*Config, error) {
 	}
 	flag.Var(&addr, "a", "адрес HTTP-сервера")
 
-	pollInterval := SecondDuration(2 * time.Second)
-	reportInterval := SecondDuration(10 * time.Second)
-	flag.Var(&pollInterval, "p", "частота опроса метрик из пакета runtime")
-	flag.Var(&reportInterval, "r", "частота отправки метрик на сервер")
+	pollInterval := config.SecondDuration(2 * time.Second)
+	reportInterval := config.SecondDuration(10 * time.Second)
+	flag.Var(&pollInterval, "p", "частота опроса метрик из пакета runtime в секундах")
+	flag.Var(&reportInterval, "r", "частота отправки метрик на сервер в секундах")
 
 	flag.Parse()
 

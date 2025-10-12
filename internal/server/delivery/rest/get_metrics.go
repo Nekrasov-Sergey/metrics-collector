@@ -1,4 +1,4 @@
-package handler
+package rest
 
 import (
 	_ "embed"
@@ -14,25 +14,25 @@ import (
 //go:embed static/metrics.html
 var metricsHTML string
 
-func (h *Handler) GetMetrics(c *gin.Context) {
+func (h *Handler) getMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metrics, err := h.service.GetMetrics(ctx)
 	if err != nil {
-		logger.Error(c, err, http.StatusInternalServerError)
+		logger.InternalServerError(c, err)
 		return
 	}
 
 	tmpl, err := template.New("metrics").Parse(metricsHTML)
 	if err != nil {
-		logger.Error(c, errors.WithStack(err), http.StatusInternalServerError)
+		logger.InternalServerError(c, errors.WithStack(err))
 		return
 	}
 
 	c.Status(http.StatusOK)
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(c.Writer, metrics); err != nil {
-		logger.Error(c, errors.WithStack(err), http.StatusInternalServerError)
+		logger.InternalServerError(c, errors.WithStack(err))
 		return
 	}
 }

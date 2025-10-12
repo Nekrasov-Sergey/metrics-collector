@@ -3,11 +3,12 @@ package router
 import (
 	"compress/gzip"
 	"io"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
 type compressReader struct {
@@ -76,12 +77,12 @@ func CompressMiddleware() gin.HandlerFunc {
 		if strings.Contains(c.GetHeader("Content-Encoding"), "gzip") {
 			cr, err := newCompressReader(c.Request.Body)
 			if err != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
+				logger.InternalServerError(c, err)
 				return
 			}
 			defer func(cr *compressReader) {
 				if err := cr.Close(); err != nil {
-					log.Error().Err(err).Msg("не удалось закрыть compressReader")
+					log.Error().Err(err).Msg("Не удалось закрыть compressReader")
 				}
 			}(cr)
 			c.Request.Body = cr
@@ -92,7 +93,7 @@ func CompressMiddleware() gin.HandlerFunc {
 			cw := newCompressWriter(c.Writer)
 			defer func(cw *compressWriter) {
 				if err := cw.Close(); err != nil {
-					log.Error().Err(err).Msg("не удалось закрыть compressWriter")
+					log.Error().Err(err).Msg("Не удалось закрыть compressWriter")
 				}
 			}(cw)
 			c.Writer = cw

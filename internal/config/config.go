@@ -3,6 +3,7 @@ package config
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -31,5 +32,29 @@ func (a *NetAddress) Set(s string) error {
 	}
 	a.Host = host
 	a.Port = port
+	return nil
+}
+
+type SecondDuration time.Duration
+
+func (d *SecondDuration) String() string {
+	return time.Duration(*d).String()
+}
+
+func (d *SecondDuration) Set(s string) error {
+	seconds, err := strconv.Atoi(s)
+	if err != nil {
+		return errors.Wrap(err, "значение должно быть в секундах")
+	}
+	*d = SecondDuration(time.Duration(seconds) * time.Second)
+	return nil
+}
+
+func (d *SecondDuration) UnmarshalText(text []byte) error {
+	seconds, err := strconv.Atoi(string(text))
+	if err != nil {
+		return errors.Wrap(err, "значение должно быть в секундах")
+	}
+	*d = SecondDuration(time.Duration(seconds) * time.Second)
 	return nil
 }
