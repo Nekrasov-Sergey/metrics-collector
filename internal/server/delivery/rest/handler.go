@@ -35,4 +35,6 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 
 	r.POST("/update", h.updateMetric)
 	r.POST("/value", h.getMetric)
+
+	r.GET("/ping", h.ping)
 }

@@ -16,6 +16,7 @@ type Config struct {
 	StoreInterval   config.SecondDuration `env:"STORE_INTERVAL"`
 	FileStoragePath string                `env:"FILE_STORAGE_PATH"`
 	Restore         bool                  `env:"RESTORE"`
+	DatabaseDSN     string                `env:"DATABASE_DSN"`
 }
 
 func New() (*Config, error) {
@@ -32,6 +33,8 @@ func New() (*Config, error) {
 
 	restore := flag.Bool("r", false, "следует ли загружать значения из указанного файла при старте сервера")
 
+	databaseDSN := flag.String("d", "", "адрес подключения к БД")
+
 	flag.Parse()
 
 	cfg := Config{
@@ -39,6 +42,7 @@ func New() (*Config, error) {
 		StoreInterval:   storeInterval,
 		FileStoragePath: utils.Deref(fileStoragePath),
 		Restore:         utils.Deref(restore),
+		DatabaseDSN:     utils.Deref(databaseDSN),
 	}
 
 	if err := env.Parse(&cfg); err != nil {

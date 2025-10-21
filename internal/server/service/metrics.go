@@ -23,7 +23,7 @@ func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
 		*metric.Delta += utils.Deref(counterMetric.Delta)
 	}
 
-	if err := s.repo.UpdateMetric(ctx, metric); err != nil {
+	if err := s.memStorage.UpdateMetric(ctx, metric); err != nil {
 		return err
 	}
 
@@ -34,11 +34,11 @@ func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
 }
 
 func (s *Service) GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error) {
-	return s.repo.GetMetric(ctx, rowMetric)
+	return s.memStorage.GetMetric(ctx, rowMetric)
 }
 
 func (s *Service) GetMetrics(ctx context.Context) (metrics []types.Metric, err error) {
-	return s.repo.GetMetrics(ctx)
+	return s.memStorage.GetMetrics(ctx)
 }
 
 func (s *Service) loadMetricsFromFile(ctx context.Context) {
@@ -62,7 +62,7 @@ func (s *Service) loadMetricsFromFile(ctx context.Context) {
 		return
 	}
 
-	if err := s.repo.UpdateMetrics(ctx, metrics); err != nil {
+	if err := s.memStorage.UpdateMetrics(ctx, metrics); err != nil {
 		log.Error().Err(err).Msg("Не удалось загрузить метрики в репозиторий")
 		return
 	}
@@ -71,7 +71,7 @@ func (s *Service) loadMetricsFromFile(ctx context.Context) {
 }
 
 func (s *Service) SaveMetricsToFile(ctx context.Context) {
-	metrics, err := s.repo.GetMetrics(ctx)
+	metrics, err := s.memStorage.GetMetrics(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Не удалось получить метрики из репозитория")
 		return

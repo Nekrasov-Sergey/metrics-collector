@@ -36,8 +36,7 @@ func run() error {
 		return err
 	}
 
-	repo := memstorage.New()
-	s := service.New(ctx, repo, cfg)
+	s := service.New(ctx, cfg, memstorage.New())
 	h := rest.New(s, cfg)
 	h.RegisterRoutes(r)
 	h.StartMetricSaver(ctx)
