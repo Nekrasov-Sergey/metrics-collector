@@ -98,8 +98,7 @@ func TestHandler_UpdateMetric(t *testing.T) {
 
 			r := gin.New()
 			cfg := &serverconfig.Config{}
-			memStorage := memstorage.New()
-			srv := service.New(context.Background(), memStorage, cfg)
+			srv := service.New(context.Background(), cfg, memstorage.New())
 			h := rest.New(srv, cfg)
 			h.RegisterRoutes(r)
 			server := httptest.NewServer(r)

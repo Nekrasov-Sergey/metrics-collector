@@ -15,14 +15,14 @@ type Repository interface {
 }
 
 type Service struct {
-	repo   Repository
-	config *serverconfig.Config
+	config     *serverconfig.Config
+	memStorage Repository
 }
 
-func New(ctx context.Context, repo Repository, config *serverconfig.Config) *Service {
+func New(ctx context.Context, config *serverconfig.Config, memStorage Repository) *Service {
 	s := &Service{
-		repo:   repo,
-		config: config,
+		config:     config,
+		memStorage: memStorage,
 	}
 	s.loadMetricsFromFile(ctx)
 	return s
