@@ -5,9 +5,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func New(l zerolog.Logger) *gin.Engine {
+func New(logger zerolog.Logger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), LoggerMiddleware(l), CompressMiddleware())
+	r.Use(gin.Recovery(), LoggerMiddleware(logger), CompressMiddleware())
 	return r
 }

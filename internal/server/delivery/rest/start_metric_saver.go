@@ -3,8 +3,6 @@ package rest
 import (
 	"context"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 func (h *Handler) StartMetricSaver(ctx context.Context) {
@@ -14,7 +12,7 @@ func (h *Handler) StartMetricSaver(ctx context.Context) {
 			for {
 				select {
 				case <-ctx.Done():
-					log.Info().Msg("Сохранение метрик в файл остановлено")
+					h.logger.Info().Msg("Сохранение метрик в файл остановлено")
 					return
 				case <-storeTicker.C:
 					h.service.SaveMetricsToFile(ctx)

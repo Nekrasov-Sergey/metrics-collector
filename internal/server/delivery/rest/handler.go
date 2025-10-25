@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
@@ -14,17 +15,20 @@ type Service interface {
 	GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error)
 	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 	SaveMetricsToFile(ctx context.Context)
+	PingDB(ctx context.Context) error
 }
 
 type Handler struct {
-	service Service
 	config  *serverconfig.Config
+	service Service
+	logger  zerolog.Logger
 }
 
-func New(service Service, config *serverconfig.Config) *Handler {
+func New(config *serverconfig.Config, service Service, logger zerolog.Logger) *Handler {
 	return &Handler{
-		service: service,
 		config:  config,
+		service: service,
+		logger:  logger,
 	}
 }
 

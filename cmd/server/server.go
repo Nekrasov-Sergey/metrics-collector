@@ -12,6 +12,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/postgres"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
@@ -19,8 +20,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Err(err).Msg("Сервер завершился с ошибкой")
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("Сервер завершился с ошибкой")
 	}
 }
 
@@ -31,16 +31,30 @@ func run() error {
 	l := logger.New()
 	r := router.New(l)
 
-	cfg, err := serverconfig.New()
+	cfg, err := serverconfig.New(l)
 	if err != nil {
 		return err
 	}
 
-	s := service.New(ctx, cfg, memstorage.New())
-	h := rest.New(s, cfg)
-	h.RegisterRoutes(r)
-	h.StartMetricSaver(ctx)
+	var repo service.Repository
+	if cfg.DatabaseDSN != "" {
+		repo, err = postgres.New(cfg.DatabaseDSN, l)
+		if err != nil {
+			return err
+		}
+		defer repo.CloseDB()
+	} else {
+		repo = memstorage.New()
+	}
 
-	srv := server.New(r, cfg, l)
+	s := service.New(ctx, cfg, repo, l)
+	h := rest.New(cfg, s, l)
+	h.RegisterRoutes(r)
+
+	if cfg.DatabaseDSN == "" {
+		h.StartMetricSaver(ctx)
+	}
+
+	srv := server.New(r, cfg.Addr, l)
 	return srv.Run(ctx)
 }

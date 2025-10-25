@@ -16,8 +16,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Err(err).Msg("Агент завершился с ошибкой")
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("Агент завершился с ошибкой")
 	}
 }
 
@@ -33,6 +32,6 @@ func run() error {
 		return err
 	}
 
-	a := agent.New(client, cfg, l)
+	a := agent.New(cfg, client, l)
 	return a.Run(ctx)
 }

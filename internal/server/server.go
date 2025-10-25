@@ -7,8 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
 )
 
 type Server struct {
@@ -16,10 +14,10 @@ type Server struct {
 	logger     zerolog.Logger
 }
 
-func New(handler http.Handler, config *serverconfig.Config, logger zerolog.Logger) *Server {
+func New(handler http.Handler, addr string, logger zerolog.Logger) *Server {
 	return &Server{
 		httpServer: &http.Server{
-			Addr:    config.Addr,
+			Addr:    addr,
 			Handler: handler,
 		},
 		logger: logger,
