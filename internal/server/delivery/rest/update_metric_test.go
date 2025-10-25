@@ -14,6 +14,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
 func TestHandler_UpdateMetric(t *testing.T) {
@@ -98,8 +99,8 @@ func TestHandler_UpdateMetric(t *testing.T) {
 
 			r := gin.New()
 			cfg := &serverconfig.Config{}
-			srv := service.New(context.Background(), cfg, memstorage.New())
-			h := rest.New(srv, cfg)
+			srv := service.New(context.Background(), cfg, memstorage.New(), logger.New())
+			h := rest.New(cfg, srv, logger.New())
 			h.RegisterRoutes(r)
 			server := httptest.NewServer(r)
 			defer server.Close()

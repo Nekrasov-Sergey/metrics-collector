@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"sync"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
@@ -17,3 +18,9 @@ func New() *MemStorage {
 		metrics: make(map[types.MetricName]types.Metric),
 	}
 }
+
+func (m *MemStorage) PingDB(_ context.Context) error {
+	return nil
+}
+
+func (m *MemStorage) CloseDB() {}

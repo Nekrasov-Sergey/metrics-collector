@@ -23,16 +23,16 @@ func TestRunAgent(t *testing.T) {
 
 	cfg := &agentconfig.Config{
 		Addr:           ts.URL,
-		PollInterval:   config.SecondDuration(100 * time.Millisecond),
-		ReportInterval: config.SecondDuration(200 * time.Millisecond),
+		PollInterval:   config.SecondDuration(50 * time.Millisecond),
+		ReportInterval: config.SecondDuration(100 * time.Millisecond),
 	}
 
 	client := resty.New()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	a := agent.New(client, cfg, logger.New())
+	a := agent.New(cfg, client, logger.New())
 	err := a.Run(ctx)
 	require.NoError(t, err)
 }

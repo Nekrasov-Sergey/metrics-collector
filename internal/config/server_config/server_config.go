@@ -6,6 +6,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
@@ -19,7 +20,7 @@ type Config struct {
 	DatabaseDSN     string                `env:"DATABASE_DSN"`
 }
 
-func New() (*Config, error) {
+func New(logger zerolog.Logger) (*Config, error) {
 	addr := config.NetAddress{
 		Host: "localhost",
 		Port: 8080,
@@ -48,6 +49,14 @@ func New() (*Config, error) {
 	if err := env.Parse(&cfg); err != nil {
 		return nil, errors.Wrap(err, "не удалось распарсить переменные окружения в конфиг")
 	}
+
+	logger.Info().
+		Str("address", cfg.Addr).
+		Str("store_interval", cfg.StoreInterval.String()).
+		Str("file_storage_path", cfg.FileStoragePath).
+		Bool("restore", cfg.Restore).
+		Str("database_dsn", cfg.DatabaseDSN).
+		Msg("Загружена конфигурация сервера")
 
 	return &cfg, nil
 }

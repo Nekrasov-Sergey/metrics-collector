@@ -20,15 +20,15 @@ import (
 )
 
 type Agent struct {
-	client *resty.Client
 	config *agentconfig.Config
+	client *resty.Client
 	logger zerolog.Logger
 }
 
-func New(client *resty.Client, config *agentconfig.Config, logger zerolog.Logger) *Agent {
+func New(config *agentconfig.Config, client *resty.Client, logger zerolog.Logger) *Agent {
 	return &Agent{
-		client: client,
 		config: config,
+		client: client,
 		logger: logger,
 	}
 }
