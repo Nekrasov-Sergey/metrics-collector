@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func MigrateDB(databaseDSN string, logger zerolog.Logger) error {
+func migrateDB(databaseDSN string, logger zerolog.Logger) error {
 	logger.Info().Msg("Запуск миграций базы данных...")
 
 	m, err := migrate.New("file://migrations", databaseDSN)

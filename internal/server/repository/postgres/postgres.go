@@ -15,6 +15,10 @@ type Postgres struct {
 }
 
 func New(databaseDSN string, logger zerolog.Logger) (*Postgres, error) {
+	if err := migrateDB(databaseDSN, logger); err != nil {
+		return nil, err
+	}
+
 	db, err := sqlx.Connect("pgx", databaseDSN)
 	if err != nil {
 		return nil, errors.Wrap(err, "не удалось подключиться к БД")

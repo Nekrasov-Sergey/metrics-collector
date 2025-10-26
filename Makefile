@@ -17,9 +17,10 @@ build-agent:
 	@go build -o ./cmd/agent/agent ./cmd/agent/agent.go
 
 .PHONY: test
-test:
+test: gen
 	@echo "🔍 Запуск тестов..."
-	@go test -v ./...
+	@go test -race ./...
+	@golangci-lint run
 
 .PHONY: cover
 cover:
@@ -31,3 +32,10 @@ cover:
 	@echo ""
 	@echo "🌐 HTML-отчёт сохранён в: cover.html"
 	@go tool cover -html=cover.out -o cover.html
+
+.PHONY: gen
+gen:
+	@echo "🧰 Генерация моков..."
+	@rm -rf internal/server/service/mocks
+	@mkdir -p internal/server/service/mocks
+	@go generate ./...

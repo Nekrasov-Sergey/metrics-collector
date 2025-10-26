@@ -28,6 +28,13 @@ jobs:
           chmod -R +x $GITHUB_WORKSPACE/.tools/statictest
           mv $GITHUB_WORKSPACE/.tools/statictest /usr/local/bin/statictest
 
+      - name: Install minimock
+        run: go install github.com/gojuno/minimock/v3/cmd/minimock@latest
+
+      - name: Generate mocks
+        run: make gen
+
       - name: Run statictest
         run: |
-          go vet -vettool=$(which statictest) ./...
+          packages=$(go list -buildvcs=false ./... | grep -v '/mocks')
+          go vet -vettool=$(which statictest) $packages

@@ -28,18 +28,22 @@ func LoggerMiddleware(baseLogger zerolog.Logger) gin.HandlerFunc {
 		start := time.Now()
 		c.Next()
 
+		status := c.Writer.Status()
 		l = l.With().
-			Int("status", c.Writer.Status()).
+			Int("status", status).
 			Str("duration", time.Since(start).String()).
 			Int("size", c.Writer.Size()).
 			Logger()
 
-		if len(c.Errors) > 0 {
+		if len(c.Errors) > 0 || status >= 400 {
 			errLog := l.Error()
-			if c.Writer.Status() == http.StatusInternalServerError {
+			if status == http.StatusInternalServerError {
 				errLog = errLog.Stack()
 			}
-			errLog.Err(c.Errors[0].Err).Msg("Ошибка выполнения запроса")
+			if len(c.Errors) > 0 {
+				errLog.Err(c.Errors[0].Err)
+			}
+			errLog.Msg("Ошибка выполнения запроса")
 			return
 		}
 

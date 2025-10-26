@@ -6,30 +6,14 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (m *MemStorage) UpdateMetric(ctx context.Context, metric types.Metric) error {
+func (m *MemStorage) UpdateMetric(_ context.Context, metric types.Metric) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.metrics[metric.Name] = metric
-	switch metric.MType {
-	case types.Gauge:
-		logger.C(ctx).Info().
-			Str("тип", string(types.Gauge)).
-			Str("имя", string(metric.Name)).
-			Float64("значение", utils.Deref(metric.Value)).
-			Msg("Обновлённая метрика")
-	case types.Counter:
-		logger.C(ctx).Info().
-			Str("тип", string(types.Counter)).
-			Str("имя", string(metric.Name)).
-			Int64("значение", utils.Deref(metric.Delta)).
-			Msg("Обновлённая метрика")
-	}
-
 	return nil
 }
 
