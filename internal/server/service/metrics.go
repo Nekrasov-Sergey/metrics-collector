@@ -96,6 +96,10 @@ func (s *Service) SaveMetricsToFile(ctx context.Context) {
 	s.logger.Info().Msg("Метрики сохранены в файл")
 }
 
-func (s *Service) PingDB(ctx context.Context) error {
-	return s.repo.PingDB(ctx)
+func (s *Service) Ping(ctx context.Context) error {
+	return s.repo.Ping(ctx)
+}
+
+func (s *Service) UpdateMetrics(ctx context.Context, metrics []types.Metric) error {
+	return s.repo.UpdateMetrics(ctx, metrics)
 }

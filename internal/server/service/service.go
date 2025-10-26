@@ -14,8 +14,8 @@ type Repository interface {
 	GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error)
 	GetMetrics(_ context.Context) ([]types.Metric, error)
 	UpdateMetrics(_ context.Context, metrics []types.Metric) error
-	PingDB(ctx context.Context) error
-	CloseDB()
+	Ping(ctx context.Context) error
+	Close() error
 }
 
 type Service struct {
