@@ -10,7 +10,6 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/dbutils"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
@@ -30,8 +29,6 @@ on conflict (name) do update set delta = :delta,
 		return errors.Wrapf(err, "не удалось обновить метрику %q", metric.Name)
 	}
 
-	logger.C(ctx).Info().Msgf("Метрика %q обновлена", metric.Name)
-
 	return nil
 }
 
@@ -50,8 +47,6 @@ where name = :name`
 		return metric, errors.Wrapf(err, "не удалось получить метрику %q", metric.Name)
 	}
 
-	logger.C(ctx).Info().Msgf("Метрика %q получена", metric.Name)
-
 	return metric, nil
 }
 
@@ -61,8 +56,6 @@ func (p *Postgres) GetMetrics(ctx context.Context) (metrics []types.Metric, err 
 	if err = dbutils.NamedSelect(ctx, p.db, &metrics, q, map[string]any{}); err != nil {
 		return nil, errors.Wrap(err, "не удалось получить метрики")
 	}
-
-	logger.C(ctx).Info().Msg("Метрики получены")
 
 	return metrics, nil
 }
@@ -107,8 +100,6 @@ on conflict (name) do update set delta = :delta,
 	if err != nil {
 		return err
 	}
-
-	logger.C(ctx).Info().Msg("Метрики обновлены")
 
 	return nil
 }

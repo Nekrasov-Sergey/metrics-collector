@@ -9,6 +9,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
+//go:generate minimock -i github.com/Nekrasov-Sergey/metrics-collector/internal/server/service.Repository -o ./mocks/repo.go -n RepoMock
 type Repository interface {
 	UpdateMetric(ctx context.Context, metric types.Metric) error
 	GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error)

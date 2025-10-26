@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/multierr"
 
@@ -30,7 +31,7 @@ func run() (err error) {
 	defer cancel()
 
 	l := logger.New()
-	r := router.New(l)
+	r := router.New(l, gin.ReleaseMode)
 
 	cfg, err := serverconfig.New(l)
 	if err != nil {
@@ -39,10 +40,6 @@ func run() (err error) {
 
 	var repo service.Repository
 	if cfg.DatabaseDSN != "" {
-		if err := postgres.MigrateDB(cfg.DatabaseDSN, l); err != nil {
-			return err
-		}
-
 		repo, err = postgres.New(cfg.DatabaseDSN, l)
 		if err != nil {
 			return err

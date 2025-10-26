@@ -53,7 +53,7 @@ func (a *Agent) Run(ctx context.Context) error {
 			pollCount = a.Poll(metrics, pollCount)
 			a.logger.Info().Msg("Метрики собраны")
 		case <-reportTicker.C:
-			isSuccess := a.Report(metrics)
+			isSuccess := a.Report(ctx, metrics)
 			if isSuccess {
 				a.logger.Info().Msgf("Отправлено %d метрик на сервер %s", len(metrics), a.config.Addr)
 				pollCount = 0
@@ -88,7 +88,7 @@ func (a *Agent) Poll(metrics map[types.MetricName]types.Metric, pollCount int64)
 	return pollCount
 }
 
-func (a *Agent) Report(metricsMap map[types.MetricName]types.Metric) bool {
+func (a *Agent) Report(ctx context.Context, metricsMap map[types.MetricName]types.Metric) bool {
 	if len(metricsMap) == 0 {
 		return false
 	}
@@ -110,15 +110,50 @@ func (a *Agent) Report(metricsMap map[types.MetricName]types.Metric) bool {
 		return false
 	}
 
-	_, err = a.client.R().
-		SetHeader("Content-Encoding", "gzip").
-		SetBody(compressedMetrics).
-		Post(path)
-	if err != nil {
-		a.logger.Error().Err(err).Msg("Не удалось отправить метрики")
-		return false
+	delays := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second, 0}
+	for i, delay := range delays {
+		resp, err := a.client.R().
+			SetContext(ctx).
+			SetHeader("Content-Encoding", "gzip").
+			SetBody(compressedMetrics).
+			Post(path)
+
+		if err == nil {
+			if resp.IsError() {
+				a.logger.Error().Msgf("Сервер вернул ошибку: %s", resp.String())
+				return false
+			}
+			return true
+		}
+
+		var urlErr *url.Error
+		switch {
+		case errors.Is(err, context.DeadlineExceeded):
+			a.logger.Error().Err(err).Msg("Истек таймаут запроса")
+			return false
+		case errors.Is(err, context.Canceled):
+			a.logger.Error().Err(err).Msg("Контекст отменен")
+			return false
+		case errors.As(err, &urlErr):
+			a.logger.Error().Err(err).Msgf("Сервер недоступен, попытка №%d", i+1)
+			if delay > 0 {
+				timer := time.NewTimer(delay)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					a.logger.Error().Msg("Запрос отменён контекстом во время ожидания")
+					return false
+				case <-timer.C:
+				}
+			}
+		default:
+			a.logger.Error().Err(err).Msg("Неизвестная ошибка")
+			return false
+		}
 	}
-	return true
+
+	a.logger.Error().Msg("Все попытки отправки исчерпаны")
+	return false
 }
 
 func (a *Agent) getCompressedMetrics(metrics []types.Metric) ([]byte, error) {

@@ -3,9 +3,13 @@ package dbutils
 import (
 	"context"
 	"database/sql"
+	"time"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"go.uber.org/multierr"
 )
 
@@ -15,11 +19,12 @@ func NamedGet(ctx context.Context, db sqlx.ExtContext, dest any, q string, arg a
 		return errors.Wrap(err, "не удалось подготовить SQL-запрос (NamedGet)")
 	}
 
-	if err := sqlx.GetContext(ctx, db, dest, nq, args...); err != nil {
-		return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedGet)")
-	}
-
-	return nil
+	return runWithRetries(ctx, func() error {
+		if err := sqlx.GetContext(ctx, db, dest, nq, args...); err != nil {
+			return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedGet)")
+		}
+		return nil
+	})
 }
 
 func NamedSelect(ctx context.Context, db sqlx.ExtContext, dest any, q string, arg any) error {
@@ -28,11 +33,12 @@ func NamedSelect(ctx context.Context, db sqlx.ExtContext, dest any, q string, ar
 		return errors.Wrap(err, "не удалось подготовить SQL-запрос (NamedSelect)")
 	}
 
-	if err := sqlx.SelectContext(ctx, db, dest, nq, args...); err != nil {
-		return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedSelect)")
-	}
-
-	return nil
+	return runWithRetries(ctx, func() error {
+		if err := sqlx.SelectContext(ctx, db, dest, nq, args...); err != nil {
+			return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedSelect)")
+		}
+		return nil
+	})
 }
 
 func NamedExec(ctx context.Context, db sqlx.ExtContext, q string, arg any) error {
@@ -41,11 +47,53 @@ func NamedExec(ctx context.Context, db sqlx.ExtContext, q string, arg any) error
 		return errors.Wrap(err, "не удалось подготовить SQL-запрос (NamedExec)")
 	}
 
-	if _, err := db.ExecContext(ctx, nq, args...); err != nil {
-		return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedExec)")
+	return runWithRetries(ctx, func() error {
+		if _, err := db.ExecContext(ctx, nq, args...); err != nil {
+			return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedExec)")
+		}
+		return nil
+	})
+}
+
+func runWithRetries(ctx context.Context, fn func() error) (err error) {
+	delays := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second, 0}
+	for i, delay := range delays {
+		if err = fn(); err == nil {
+			return nil
+		}
+
+		if !isConnectionError(err) {
+			return errors.Wrap(err, "не удалось выполнить SQL-запрос (NamedSelect)")
+		}
+
+		log.Error().Err(err).Msgf("Ошибка соединения c PostgreSQL, попытка №%d", i+1)
+		if delay > 0 {
+			timer := time.NewTimer(delay)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				log.Error().Msg("Запрос отменён контекстом во время ожидания")
+				return err
+			case <-timer.C:
+			}
+		}
 	}
 
-	return nil
+	log.Error().Msg("Все попытки подключения исчерпаны")
+	return err
+}
+
+func isConnectionError(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case pgerrcode.ConnectionException, pgerrcode.ConnectionDoesNotExist, pgerrcode.ConnectionFailure,
+			pgerrcode.SQLClientUnableToEstablishSQLConnection, pgerrcode.SQLServerRejectedEstablishmentOfSQLConnection,
+			pgerrcode.TransactionResolutionUnknown, pgerrcode.ProtocolViolation, pgerrcode.SerializationFailure:
+			return true
+		}
+	}
+	return false
 }
 
 type DB interface {
