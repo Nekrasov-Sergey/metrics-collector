@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/rs/zerolog/log"
+	"go.uber.org/multierr"
 
 	serverconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
@@ -24,7 +25,7 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (err error) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -38,11 +39,15 @@ func run() error {
 
 	var repo service.Repository
 	if cfg.DatabaseDSN != "" {
+		if err := postgres.MigrateDB(cfg.DatabaseDSN, l); err != nil {
+			return err
+		}
+
 		repo, err = postgres.New(cfg.DatabaseDSN, l)
 		if err != nil {
 			return err
 		}
-		defer repo.CloseDB()
+		defer multierr.AppendInvoke(&err, multierr.Close(repo))
 	} else {
 		repo = memstorage.New()
 	}

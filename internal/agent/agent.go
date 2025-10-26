@@ -88,39 +88,46 @@ func (a *Agent) Poll(metrics map[types.MetricName]types.Metric, pollCount int64)
 	return pollCount
 }
 
-func (a *Agent) Report(metrics map[types.MetricName]types.Metric) bool {
-	for _, metric := range metrics {
-		compressedMetric, err := a.getCompressedMetric(metric)
-		if err != nil {
-			a.logger.Error().Err(err).Msg("Не удалось сжать метрику")
-			return false
-		}
+func (a *Agent) Report(metricsMap map[types.MetricName]types.Metric) bool {
+	if len(metricsMap) == 0 {
+		return false
+	}
 
-		path, err := url.JoinPath("http://", a.config.Addr, "/update")
-		if err != nil {
-			a.logger.Error().Err(err).Msg("Не удалось сформировать url")
-			return false
-		}
+	metrics := make([]types.Metric, 0, len(metricsMap))
+	for _, metric := range metricsMap {
+		metrics = append(metrics, metric)
+	}
 
-		_, err = a.client.R().
-			SetHeader("Content-Encoding", "gzip").
-			SetBody(compressedMetric).
-			Post(path)
-		if err != nil {
-			a.logger.Error().Err(err).Msg("Не удалось отправить метрику")
-			return false
-		}
+	compressedMetrics, err := a.getCompressedMetrics(metrics)
+	if err != nil {
+		a.logger.Error().Err(err).Msg("Не удалось сжать метрики")
+		return false
+	}
+
+	path, err := url.JoinPath("http://", a.config.Addr, "/updates")
+	if err != nil {
+		a.logger.Error().Err(err).Msg("Не удалось сформировать url")
+		return false
+	}
+
+	_, err = a.client.R().
+		SetHeader("Content-Encoding", "gzip").
+		SetBody(compressedMetrics).
+		Post(path)
+	if err != nil {
+		a.logger.Error().Err(err).Msg("Не удалось отправить метрики")
+		return false
 	}
 	return true
 }
 
-func (a *Agent) getCompressedMetric(metric types.Metric) ([]byte, error) {
+func (a *Agent) getCompressedMetrics(metrics []types.Metric) ([]byte, error) {
 	var b bytes.Buffer
 	zw := gzip.NewWriter(&b)
 
-	data, err := json.Marshal(metric)
+	data, err := json.Marshal(metrics)
 	if err != nil {
-		return nil, errors.Wrap(err, "не удалось спарсить метрику в json")
+		return nil, errors.Wrap(err, "не удалось спарсить метрики в json")
 	}
 
 	if _, err := zw.Write(data); err != nil {

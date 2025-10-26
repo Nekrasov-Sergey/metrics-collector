@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/dbutils"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
 func (p *Postgres) UpdateMetric(ctx context.Context, metric types.Metric) error {
@@ -28,7 +30,7 @@ on conflict (name) do update set delta = :delta,
 		return errors.Wrapf(err, "не удалось обновить метрику %q", metric.Name)
 	}
 
-	logger.C(ctx).Info().Msgf("Обновлена метрика %q", metric.Name)
+	logger.C(ctx).Info().Msgf("Метрика %q обновлена", metric.Name)
 
 	return nil
 }
@@ -48,7 +50,7 @@ where name = :name`
 		return metric, errors.Wrapf(err, "не удалось получить метрику %q", metric.Name)
 	}
 
-	logger.C(ctx).Info().Msgf("Получена метрика %q", metric.Name)
+	logger.C(ctx).Info().Msgf("Метрика %q получена", metric.Name)
 
 	return metric, nil
 }
@@ -60,30 +62,53 @@ func (p *Postgres) GetMetrics(ctx context.Context) (metrics []types.Metric, err 
 		return nil, errors.Wrap(err, "не удалось получить метрики")
 	}
 
-	logger.C(ctx).Info().Msg("Получены метрики")
+	logger.C(ctx).Info().Msg("Метрики получены")
 
 	return metrics, nil
 }
 
 func (p *Postgres) UpdateMetrics(ctx context.Context, metrics []types.Metric) error {
-	const q = `insert into metrics (name, type, delta, value)
+	const selectQuery = `select name, type, delta, value
+from metrics
+where name = :name`
+
+	const updateQuery = `insert into metrics (name, type, delta, value)
 values (:name, :type, :delta, :value)
 on conflict (name) do update set delta = :delta,
                                  value = :value`
 
-	for _, metric := range metrics {
-		args := map[string]any{
-			"name":  metric.Name,
-			"type":  metric.MType,
-			"delta": metric.Delta,
-			"value": metric.Value,
+	err := dbutils.WrapTxx(ctx, p.db, nil, func(tx *sqlx.Tx) error {
+		for _, metric := range metrics {
+			if metric.MType == types.Counter {
+				args := map[string]any{
+					"name": metric.Name,
+				}
+
+				var counterMetric types.Metric
+				if err := dbutils.NamedGet(ctx, tx, &counterMetric, selectQuery, args); err != nil && !errors.Is(err, sql.ErrNoRows) {
+					return errors.Wrapf(err, "не удалось получить метрику %q", metric.Name)
+				}
+
+				*metric.Delta += utils.Deref(counterMetric.Delta)
+			}
+
+			args := map[string]any{
+				"name":  metric.Name,
+				"type":  metric.MType,
+				"delta": metric.Delta,
+				"value": metric.Value,
+			}
+			if err := dbutils.NamedExec(ctx, tx, updateQuery, args); err != nil {
+				return errors.Wrapf(err, "не удалось обновить метрику %q", metric.Name)
+			}
 		}
-		if err := dbutils.NamedExec(ctx, p.db, q, args); err != nil {
-			return errors.Wrapf(err, "не удалось обновить метрику %q", metric.Name)
-		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
-	logger.C(ctx).Info().Msg("Обновлены метрики")
+	logger.C(ctx).Info().Msg("Метрики обновлены")
 
 	return nil
 }

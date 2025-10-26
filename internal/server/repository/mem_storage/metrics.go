@@ -70,6 +70,11 @@ func (m *MemStorage) UpdateMetrics(_ context.Context, metrics []types.Metric) er
 	defer m.mu.Unlock()
 
 	for _, metric := range metrics {
+		if metric.MType == types.Counter {
+			if counterMetric, ok := m.metrics[metric.Name]; ok {
+				*metric.Delta += utils.Deref(counterMetric.Delta)
+			}
+		}
 		m.metrics[metric.Name] = metric
 	}
 

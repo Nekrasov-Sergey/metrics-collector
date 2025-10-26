@@ -19,8 +19,10 @@ func New() *MemStorage {
 	}
 }
 
-func (m *MemStorage) PingDB(_ context.Context) error {
+func (m *MemStorage) Ping(_ context.Context) error {
 	return nil
 }
 
-func (m *MemStorage) CloseDB() {}
+func (m *MemStorage) Close() error {
+	return nil
+}

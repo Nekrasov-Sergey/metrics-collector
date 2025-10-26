@@ -15,7 +15,8 @@ type Service interface {
 	GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error)
 	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 	SaveMetricsToFile(ctx context.Context)
-	PingDB(ctx context.Context) error
+	Ping(ctx context.Context) error
+	UpdateMetrics(ctx context.Context, metrics []types.Metric) error
 }
 
 type Handler struct {
@@ -41,4 +42,5 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/value", h.getMetric)
 
 	r.GET("/ping", h.ping)
+	r.POST("/updates", h.updateMetrics)
 }
