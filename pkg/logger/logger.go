@@ -55,7 +55,7 @@ func Error(c *gin.Context, err error, status int) {
 		c.AbortWithStatus(status)
 		return
 	}
-	c.JSON(status, gin.H{
+	c.AbortWithStatusJSON(status, gin.H{
 		"error": err.Error(),
 	})
 	_ = c.Error(err)
@@ -63,14 +63,12 @@ func Error(c *gin.Context, err error, status int) {
 
 // InternalServerError логирует ошибку и возвращает 500 Internal Server Error
 func InternalServerError(c *gin.Context, err error) {
-	if err == nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	c.JSON(http.StatusInternalServerError, gin.H{
+	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 		"error": http.StatusText(http.StatusInternalServerError),
 	})
-	_ = c.Error(err)
+	if err != nil {
+		_ = c.Error(err)
+	}
 }
 
 func C(ctx context.Context) *zerolog.Logger {

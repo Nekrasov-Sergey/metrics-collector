@@ -27,7 +27,7 @@ func run() error {
 	l := logger.New()
 	client := resty.New()
 
-	cfg, err := agentconfig.New()
+	cfg, err := agentconfig.New(l)
 	if err != nil {
 		return err
 	}

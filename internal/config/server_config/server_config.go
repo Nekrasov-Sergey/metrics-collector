@@ -18,6 +18,7 @@ type Config struct {
 	FileStoragePath string                `env:"FILE_STORAGE_PATH"`
 	Restore         bool                  `env:"RESTORE"`
 	DatabaseDSN     string                `env:"DATABASE_DSN"`
+	Key             string                `env:"KEY"`
 }
 
 func New(logger zerolog.Logger) (*Config, error) {
@@ -36,6 +37,8 @@ func New(logger zerolog.Logger) (*Config, error) {
 
 	databaseDSN := flag.String("d", "", "адрес подключения к БД")
 
+	key := flag.String("k", "", "ключ для вычисления хеша")
+
 	flag.Parse()
 
 	cfg := Config{
@@ -44,6 +47,7 @@ func New(logger zerolog.Logger) (*Config, error) {
 		FileStoragePath: utils.Deref(fileStoragePath),
 		Restore:         utils.Deref(restore),
 		DatabaseDSN:     utils.Deref(databaseDSN),
+		Key:             utils.Deref(key),
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -56,6 +60,7 @@ func New(logger zerolog.Logger) (*Config, error) {
 		Str("file_storage_path", cfg.FileStoragePath).
 		Bool("restore", cfg.Restore).
 		Str("database_dsn", cfg.DatabaseDSN).
+		Str("key", cfg.Key).
 		Msg("Загружена конфигурация сервера")
 
 	return &cfg, nil

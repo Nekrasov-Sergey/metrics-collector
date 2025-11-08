@@ -80,7 +80,7 @@ func TestHandler_ping(t *testing.T) {
 			}
 			tt.build(mock)
 
-			r := router.New(l, gin.TestMode)
+			r := router.New(l, gin.TestMode, "")
 
 			s := service.New(ctx, cfg, mock.repo, l)
 			h := rest.New(cfg, s, l)
