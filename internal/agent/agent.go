@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/common"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
@@ -98,7 +99,13 @@ func (a *Agent) Report(ctx context.Context, metricsMap map[types.MetricName]type
 		metrics = append(metrics, metric)
 	}
 
-	compressedMetrics, err := a.getCompressedMetrics(metrics)
+	metricsJSON, err := json.Marshal(metrics)
+	if err != nil {
+		a.logger.Error().Err(err).Msg("не удалось спарсить метрики в json")
+		return false
+	}
+
+	compressedMetrics, err := a.getCompressedMetrics(metricsJSON)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("Не удалось сжать метрики")
 		return false
@@ -110,14 +117,19 @@ func (a *Agent) Report(ctx context.Context, metricsMap map[types.MetricName]type
 		return false
 	}
 
+	req := a.client.R().
+		SetContext(ctx).
+		SetBody(compressedMetrics).
+		SetHeader("Content-Encoding", "gzip")
+
+	if a.config.Key != "" {
+		hashSHA256 := common.HMACSHA256([]byte(a.config.Key), metricsJSON)
+		req.SetHeader("HashSHA256", hashSHA256)
+	}
+
 	delays := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second, 0}
 	for i, delay := range delays {
-		resp, err := a.client.R().
-			SetContext(ctx).
-			SetHeader("Content-Encoding", "gzip").
-			SetBody(compressedMetrics).
-			Post(path)
-
+		resp, err := req.Post(path)
 		if err == nil {
 			if resp.IsError() {
 				a.logger.Error().Msgf("Сервер вернул ошибку: %s", resp.String())
@@ -156,16 +168,11 @@ func (a *Agent) Report(ctx context.Context, metricsMap map[types.MetricName]type
 	return false
 }
 
-func (a *Agent) getCompressedMetrics(metrics []types.Metric) ([]byte, error) {
+func (a *Agent) getCompressedMetrics(metricsJSON []byte) ([]byte, error) {
 	var b bytes.Buffer
 	zw := gzip.NewWriter(&b)
 
-	data, err := json.Marshal(metrics)
-	if err != nil {
-		return nil, errors.Wrap(err, "не удалось спарсить метрики в json")
-	}
-
-	if _, err := zw.Write(data); err != nil {
+	if _, err := zw.Write(metricsJSON); err != nil {
 		return nil, errors.Wrap(err, "не удалось записать данные для сжатия")
 	}
 

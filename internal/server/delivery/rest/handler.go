@@ -38,8 +38,8 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.GET("/value/:type/:name", h.getMetricOld)
 	r.GET("/", h.getMetrics)
 
-	r.POST("/update", h.updateMetric)
-	r.POST("/value", h.getMetric)
+	r.POST("/update/", h.updateMetric)
+	r.POST("/value/", h.getMetric)
 
 	r.GET("/ping", h.ping)
 	r.POST("/updates", h.updateMetrics)

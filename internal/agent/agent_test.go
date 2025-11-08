@@ -31,7 +31,7 @@ func TestRunAgent(t *testing.T) {
 
 	l := logger.New()
 
-	r := router.New(l, gin.TestMode)
+	r := router.New(l, gin.TestMode, "")
 
 	srvConfig, err := serverconfig.New(l)
 	require.NoError(t, err)

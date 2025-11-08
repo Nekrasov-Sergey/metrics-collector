@@ -31,12 +31,13 @@ func run() (err error) {
 	defer cancel()
 
 	l := logger.New()
-	r := router.New(l, gin.ReleaseMode)
 
 	cfg, err := serverconfig.New(l)
 	if err != nil {
 		return err
 	}
+
+	r := router.New(l, gin.ReleaseMode, cfg.Key)
 
 	var repo service.Repository
 	if cfg.DatabaseDSN != "" {
