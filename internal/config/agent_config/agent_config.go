@@ -17,6 +17,7 @@ type Config struct {
 	PollInterval   config.SecondDuration `env:"POLL_INTERVAL"`
 	ReportInterval config.SecondDuration `env:"REPORT_INTERVAL"`
 	Key            string                `env:"KEY"`
+	RateLimit      int                   `env:"RATE_LIMIT"`
 }
 
 func New(logger zerolog.Logger) (*Config, error) {
@@ -33,6 +34,8 @@ func New(logger zerolog.Logger) (*Config, error) {
 
 	key := flag.String("k", "", "ключ для вычисления хеша")
 
+	rateLimit := flag.Int("l", 1, "количество одновременно исходящих запросов на сервер")
+
 	flag.Parse()
 
 	cfg := Config{
@@ -40,6 +43,7 @@ func New(logger zerolog.Logger) (*Config, error) {
 		PollInterval:   pollInterval,
 		ReportInterval: reportInterval,
 		Key:            utils.Deref(key),
+		RateLimit:      utils.Deref(rateLimit),
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -51,6 +55,7 @@ func New(logger zerolog.Logger) (*Config, error) {
 		Str("poll_interval", cfg.PollInterval.String()).
 		Str("report_interval", cfg.ReportInterval.String()).
 		Str("key", cfg.Key).
+		Int("rate_limit", cfg.RateLimit).
 		Msg("Загружена конфигурация агента")
 
 	return &cfg, nil

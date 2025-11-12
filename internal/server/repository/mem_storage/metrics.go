@@ -4,12 +4,22 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
+
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (m *MemStorage) UpdateMetric(_ context.Context, metric types.Metric) error {
+func (m *MemStorage) UpdateMetric(ctx context.Context, metric types.Metric) error {
+	if metric.MType == types.Counter {
+		counterMetric, err := m.GetMetric(ctx, metric)
+		if err != nil && !errors.Is(err, errcodes.ErrMetricNotFound) {
+			return err
+		}
+		*metric.Delta += utils.Deref(counterMetric.Delta)
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
