@@ -32,4 +32,6 @@ const (
 	TotalAlloc    MetricName = "TotalAlloc"
 	RandomValue   MetricName = "RandomValue"
 	PollCount     MetricName = "PollCount"
+	TotalMemory   MetricName = "TotalMemory"
+	FreeMemory    MetricName = "FreeMemory"
 )

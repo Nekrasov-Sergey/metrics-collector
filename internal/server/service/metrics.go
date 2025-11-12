@@ -6,22 +6,11 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-json"
-	"github.com/pkg/errors"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
 func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
-	if metric.MType == types.Counter {
-		counterMetric, err := s.repo.GetMetric(ctx, metric)
-		if err != nil && !errors.Is(err, errcodes.ErrMetricNotFound) {
-			return err
-		}
-		*metric.Delta += utils.Deref(counterMetric.Delta)
-	}
-
 	if err := s.repo.UpdateMetric(ctx, metric); err != nil {
 		return err
 	}

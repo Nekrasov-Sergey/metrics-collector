@@ -51,6 +51,7 @@ func TestRunAgent(t *testing.T) {
 		Addr:           strings.TrimPrefix(srv.URL, "http://"),
 		PollInterval:   config.SecondDuration(50 * time.Millisecond),
 		ReportInterval: config.SecondDuration(100 * time.Millisecond),
+		RateLimit:      5,
 	}
 
 	client := resty.New()
