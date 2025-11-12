@@ -18,9 +18,11 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 )
 
-func TestHandler_updateMetricOld(t *testing.T) {
+func TestHandler_getMetric(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -32,7 +34,8 @@ func TestHandler_updateMetricOld(t *testing.T) {
 	}
 
 	type args struct {
-		url string
+		url  string
+		body string
 	}
 	type buildMock struct {
 		repo *mocks.RepoMock
@@ -48,24 +51,17 @@ func TestHandler_updateMetricOld(t *testing.T) {
 		want  want
 	}{
 		{
-			name: "SuccessGauge",
+			name: "Success",
 			args: args{
-				url: "/update/gauge/Alloc/12.3",
+				url: "/value/",
+				body: `
+{
+  "id": "LastGC",
+  "type": "gauge"
+}`,
 			},
 			build: func(m *buildMock) {
-				m.repo.UpdateMetricMock.Return(nil)
-			},
-			want: want{
-				code: http.StatusOK,
-			},
-		},
-		{
-			name: "SuccessCounter",
-			args: args{
-				url: "/update/counter/PollCount/5",
-			},
-			build: func(m *buildMock) {
-				m.repo.UpdateMetricMock.Return(nil)
+				m.repo.GetMetricMock.Return(types.Metric{}, nil)
 			},
 			want: want{
 				code: http.StatusOK,
@@ -74,7 +70,11 @@ func TestHandler_updateMetricOld(t *testing.T) {
 		{
 			name: "NameNotFound",
 			args: args{
-				url: "/update/gauge//12.3",
+				url: "/value/",
+				body: `
+{
+  "type": "gauge"
+}`,
 			},
 			build: func(m *buildMock) {
 			},
@@ -86,50 +86,66 @@ func TestHandler_updateMetricOld(t *testing.T) {
 		{
 			name: "IncorrectType",
 			args: args{
-				url: "/update/GAUGE/Alloc/12.3",
+				url: "/value/",
+				body: `
+{
+  "id": "LastGC",
+  "type": "GAUGE"
+}`,
 			},
 			build: func(m *buildMock) {
 			},
 			want: want{
 				code: http.StatusBadRequest,
-				body: "некорректный тип метрики: GAUGE",
+				body: "некорректный тип метрики",
 			},
 		},
 		{
-			name: "IncorrectGaugeValue",
+			name: "IncorrectBody",
 			args: args{
-				url: "/update/gauge/Alloc/twelve",
+				url:  "/value/",
+				body: `[]`,
 			},
 			build: func(m *buildMock) {
 			},
 			want: want{
 				code: http.StatusBadRequest,
-				body: "значение метрики не float64",
+				body: "не удалось распарсить тело запроса",
 			},
 		},
 		{
-			name: "IncorrectCounterValue",
+			name: "MetricNotFound",
 			args: args{
-				url: "/update/counter/PollCount/10.5",
+				url: "/value/",
+				body: `
+{
+  "id": "LastGC",
+  "type": "gauge"
+}`,
 			},
 			build: func(m *buildMock) {
+				m.repo.GetMetricMock.Return(types.Metric{}, errcodes.ErrMetricNotFound)
 			},
 			want: want{
-				code: http.StatusBadRequest,
-				body: "значение метрики не int64",
+				code: http.StatusNotFound,
+				body: errcodes.ErrMetricNotFound.Error(),
 			},
 		},
 		{
 			name: "InternalServerError",
 			args: args{
-				url: "/update/gauge/Alloc/12.3",
+				url: "/value/",
+				body: `
+{
+  "id": "LastGC",
+  "type": "gauge"
+}`,
 			},
 			build: func(m *buildMock) {
-				m.repo.UpdateMetricMock.Return(errors.New("не удалось обновить метрику"))
+				m.repo.GetMetricMock.Return(types.Metric{}, errors.New("не удалось получить метрику"))
 			},
 			want: want{
 				code: http.StatusInternalServerError,
-				body: http.StatusText(http.StatusInternalServerError),
 			},
 		},
 	}
@@ -153,7 +169,7 @@ func TestHandler_updateMetricOld(t *testing.T) {
 			defer srv.Close()
 
 			client := resty.New()
-			resp, err := client.R().Post(srv.URL + tt.args.url)
+			resp, err := client.R().SetBody(tt.args.body).Post(srv.URL + tt.args.url)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.code, resp.StatusCode())
 			if tt.want.body != "" {

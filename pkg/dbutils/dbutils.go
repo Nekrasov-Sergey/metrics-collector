@@ -89,7 +89,8 @@ func isConnectionError(err error) bool {
 		switch pgErr.Code {
 		case pgerrcode.ConnectionException, pgerrcode.ConnectionDoesNotExist, pgerrcode.ConnectionFailure,
 			pgerrcode.SQLClientUnableToEstablishSQLConnection, pgerrcode.SQLServerRejectedEstablishmentOfSQLConnection,
-			pgerrcode.TransactionResolutionUnknown, pgerrcode.ProtocolViolation, pgerrcode.SerializationFailure:
+			pgerrcode.TransactionResolutionUnknown, pgerrcode.ProtocolViolation, pgerrcode.SerializationFailure,
+			pgerrcode.DeadlockDetected:
 			return true
 		}
 	}

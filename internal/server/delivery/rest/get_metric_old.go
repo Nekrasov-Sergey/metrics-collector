@@ -16,12 +16,6 @@ func (h *Handler) getMetricOld(c *gin.Context) {
 
 	var metric types.Metric
 
-	metric.Name = types.MetricName(c.Param("name"))
-	if metric.Name == "" {
-		logger.Error(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
-		return
-	}
-
 	metric.MType = types.MetricType(c.Param("type"))
 	if !metric.MType.IsValid() {
 		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
