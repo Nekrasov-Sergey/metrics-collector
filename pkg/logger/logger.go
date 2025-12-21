@@ -2,7 +2,6 @@ package logger
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,10 +11,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
-
-type CtxKey string
-
-const LogKey CtxKey = "logger"
 
 // New настраивает формат вывода zerolog
 func New() zerolog.Logger {
@@ -49,32 +44,22 @@ func New() zerolog.Logger {
 	return logger
 }
 
-// Error обрабатывает ошибку: логирует её через zerolog и формирует JSON-ответ
-func Error(c *gin.Context, err error, status int) {
+// RespondError обрабатывает ошибку и формирует JSON-ответ
+func RespondError(c *gin.Context, err error, status int) {
 	if err == nil {
 		c.AbortWithStatus(status)
 		return
 	}
-	c.AbortWithStatusJSON(status, gin.H{
-		"error": err.Error(),
-	})
+
+	if status >= 500 {
+		c.AbortWithStatusJSON(status, gin.H{
+			"error": http.StatusText(status),
+		})
+	} else {
+		c.AbortWithStatusJSON(status, gin.H{
+			"error": err.Error(),
+		})
+	}
+
 	_ = c.Error(err)
-}
-
-// InternalServerError логирует ошибку и возвращает 500 Internal Server Error
-func InternalServerError(c *gin.Context, err error) {
-	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-		"error": http.StatusText(http.StatusInternalServerError),
-	})
-	if err != nil {
-		_ = c.Error(err)
-	}
-}
-
-func C(ctx context.Context) *zerolog.Logger {
-	logger, ok := ctx.Value(LogKey).(*zerolog.Logger)
-	if !ok {
-		return &log.Logger
-	}
-	return logger
 }

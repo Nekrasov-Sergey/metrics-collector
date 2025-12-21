@@ -1,4 +1,4 @@
-package serverconfig
+package config
 
 import (
 	"flag"
@@ -8,27 +8,28 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-type Config struct {
-	Addr            string                `env:"ADDRESS"`
-	StoreInterval   config.SecondDuration `env:"STORE_INTERVAL"`
-	FileStoragePath string                `env:"FILE_STORAGE_PATH"`
-	Restore         bool                  `env:"RESTORE"`
-	DatabaseDSN     string                `env:"DATABASE_DSN"`
-	Key             string                `env:"KEY"`
+type ServerConfig struct {
+	Addr            string         `env:"ADDRESS"`
+	StoreInterval   SecondDuration `env:"STORE_INTERVAL"`
+	FileStoragePath string         `env:"FILE_STORAGE_PATH"`
+	Restore         bool           `env:"RESTORE"`
+	DatabaseDSN     string         `env:"DATABASE_DSN"`
+	Key             string         `env:"KEY"`
+	AuditFile       string         `env:"AUDIT_FILE"`
+	AuditURL        string         `env:"AUDIT_URL"`
 }
 
-func New(logger zerolog.Logger) (*Config, error) {
-	addr := config.NetAddress{
+func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
+	addr := NetAddress{
 		Host: "localhost",
 		Port: 8080,
 	}
 	flag.Var(&addr, "a", "адрес HTTP-сервера")
 
-	storeInterval := config.SecondDuration(300 * time.Second)
+	storeInterval := SecondDuration(300 * time.Second)
 	flag.Var(&storeInterval, "i", "частота сохранения показаний сервера на диск в секундах")
 
 	fileStoragePath := flag.String("f", "./internal/server/repository/saved_data/metrics.json", "путь до файла, куда сохраняются текущие значения")
@@ -39,15 +40,21 @@ func New(logger zerolog.Logger) (*Config, error) {
 
 	key := flag.String("k", "", "ключ для вычисления хеша")
 
+	auditFile := flag.String("audit-file", "", "путь к файлу, в который сохраняются логи аудита")
+
+	auditURL := flag.String("audit-url", "", "полный URL, по которому отправляются логи аудита")
+
 	flag.Parse()
 
-	cfg := Config{
+	cfg := ServerConfig{
 		Addr:            addr.String(),
 		StoreInterval:   storeInterval,
 		FileStoragePath: utils.Deref(fileStoragePath),
 		Restore:         utils.Deref(restore),
 		DatabaseDSN:     utils.Deref(databaseDSN),
 		Key:             utils.Deref(key),
+		AuditFile:       utils.Deref(auditFile),
+		AuditURL:        utils.Deref(auditURL),
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -61,6 +68,8 @@ func New(logger zerolog.Logger) (*Config, error) {
 		Bool("restore", cfg.Restore).
 		Str("database_dsn", cfg.DatabaseDSN).
 		Str("key", cfg.Key).
+		Str("auditFile", cfg.AuditFile).
+		Str("auditURL", cfg.AuditURL).
 		Msg("Загружена конфигурация сервера")
 
 	return &cfg, nil

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
@@ -19,17 +19,24 @@ type Service interface {
 	UpdateMetrics(ctx context.Context, metrics []types.Metric) error
 }
 
-type Handler struct {
-	config  *serverconfig.Config
-	service Service
-	logger  zerolog.Logger
+//go:generate minimock -i github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest.Audit -o ./mocks/audit.go -n AuditMock
+type Audit interface {
+	Info(ctx context.Context, event *types.AuditEvent)
 }
 
-func New(config *serverconfig.Config, service Service, logger zerolog.Logger) *Handler {
+type Handler struct {
+	service Service
+	config  *config.ServerConfig
+	logger  zerolog.Logger
+	audit   Audit
+}
+
+func New(service Service, config *config.ServerConfig, logger zerolog.Logger, audit Audit) *Handler {
 	return &Handler{
-		config:  config,
 		service: service,
+		config:  config,
 		logger:  logger,
+		audit:   audit,
 	}
 }
 

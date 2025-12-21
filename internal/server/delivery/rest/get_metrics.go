@@ -19,20 +19,20 @@ func (h *Handler) getMetrics(c *gin.Context) {
 
 	metrics, err := h.service.GetMetrics(ctx)
 	if err != nil {
-		logger.InternalServerError(c, err)
+		logger.RespondError(c, err, http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := template.New("metrics").Parse(metricsHTML)
 	if err != nil {
-		logger.InternalServerError(c, errors.WithStack(err))
+		logger.RespondError(c, errors.WithStack(err), http.StatusInternalServerError)
 		return
 	}
 
 	c.Status(http.StatusOK)
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(c.Writer, metrics); err != nil {
-		logger.InternalServerError(c, errors.WithStack(err))
+		logger.RespondError(c, errors.WithStack(err), http.StatusInternalServerError)
 		return
 	}
 }

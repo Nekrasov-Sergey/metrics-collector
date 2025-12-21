@@ -5,13 +5,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/multierr"
 
-	serverconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/audit"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/postgres"
@@ -32,7 +34,12 @@ func run() (err error) {
 
 	l := logger.New()
 
-	cfg, err := serverconfig.New(l)
+	cfg, err := config.NewServerConfig(l)
+	if err != nil {
+		return err
+	}
+
+	auditLogger, err := audit.New(cfg)
 	if err != nil {
 		return err
 	}
@@ -50,8 +57,8 @@ func run() (err error) {
 		repo = memstorage.New()
 	}
 
-	s := service.New(ctx, cfg, repo, l)
-	h := rest.New(cfg, s, l)
+	s := service.New(ctx, repo, cfg, l)
+	h := rest.New(s, cfg, l, auditLogger)
 	h.RegisterRoutes(r)
 
 	if cfg.DatabaseDSN == "" {
@@ -59,5 +66,27 @@ func run() (err error) {
 	}
 
 	srv := server.New(r, cfg.Addr, l)
-	return srv.Run(ctx)
+
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- srv.Run()
+	}()
+
+	select {
+	case <-ctx.Done():
+	case err := <-serverErr:
+		if err != nil {
+			return err
+		}
+	}
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
+
+	l.Info().Msg("Сервер остановлен")
+	return nil
 }

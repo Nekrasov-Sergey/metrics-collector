@@ -73,7 +73,7 @@ func (s *Service) SaveMetricsToFile(ctx context.Context) {
 	}
 
 	if err := os.MkdirAll(filepath.Dir(s.config.FileStoragePath), 0755); err != nil {
-		s.logger.Error().Err(err).Msg("Не удалось открыть файл для записи метрик")
+		s.logger.Error().Err(err).Msg("не удалось создать директорию для записи метрик")
 		return
 	}
 

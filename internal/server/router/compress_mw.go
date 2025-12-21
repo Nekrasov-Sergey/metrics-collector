@@ -3,6 +3,7 @@ package router
 import (
 	"compress/gzip"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -77,7 +78,7 @@ func CompressMiddleware() gin.HandlerFunc {
 		if strings.Contains(c.GetHeader("Content-Encoding"), "gzip") {
 			cr, err := newCompressReader(c.Request.Body)
 			if err != nil {
-				logger.InternalServerError(c, err)
+				logger.RespondError(c, err, http.StatusInternalServerError)
 				return
 			}
 			defer func(cr *compressReader) {

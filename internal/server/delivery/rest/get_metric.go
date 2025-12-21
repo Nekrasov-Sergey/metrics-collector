@@ -16,27 +16,27 @@ func (h *Handler) getMetric(c *gin.Context) {
 
 	var metric types.Metric
 	if err := c.ShouldBindJSON(&metric); err != nil {
-		logger.Error(c, errors.Wrap(err, "не удалось распарсить тело запроса"), http.StatusBadRequest)
+		logger.RespondError(c, errors.Wrap(err, "не удалось распарсить тело запроса"), http.StatusBadRequest)
 		return
 	}
 
 	if metric.Name == "" {
-		logger.Error(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
+		logger.RespondError(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
 		return
 	}
 
 	if !metric.MType.IsValid() {
-		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
+		logger.RespondError(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
 		return
 	}
 
 	metric, err := h.service.GetMetric(ctx, metric)
 	if err != nil {
 		if errors.Is(err, errcodes.ErrMetricNotFound) {
-			logger.Error(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
+			logger.RespondError(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
 			return
 		}
-		logger.InternalServerError(c, err)
+		logger.RespondError(c, err, http.StatusInternalServerError)
 		return
 	}
 
