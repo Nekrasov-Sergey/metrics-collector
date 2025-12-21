@@ -19,7 +19,7 @@ func (h *Handler) updateMetricOld(c *gin.Context) {
 
 	metric.Name = types.MetricName(c.Param("name"))
 	if metric.Name == "" {
-		logger.Error(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
+		logger.RespondError(c, errors.New("отсутствует имя метрики"), http.StatusNotFound)
 		return
 	}
 
@@ -28,24 +28,24 @@ func (h *Handler) updateMetricOld(c *gin.Context) {
 	case types.Gauge:
 		value, err := strconv.ParseFloat(c.Param("value"), 64)
 		if err != nil {
-			logger.Error(c, errors.Wrap(err, "значение метрики не float64"), http.StatusBadRequest)
+			logger.RespondError(c, errors.Wrap(err, "значение метрики не float64"), http.StatusBadRequest)
 			return
 		}
 		metric.Value = utils.Ptr(value)
 	case types.Counter:
 		value, err := strconv.ParseInt(c.Param("value"), 10, 64)
 		if err != nil {
-			logger.Error(c, errors.Wrap(err, "значение метрики не int64"), http.StatusBadRequest)
+			logger.RespondError(c, errors.Wrap(err, "значение метрики не int64"), http.StatusBadRequest)
 			return
 		}
 		metric.Delta = utils.Ptr(value)
 	default:
-		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
+		logger.RespondError(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.UpdateMetric(ctx, metric); err != nil {
-		logger.InternalServerError(c, err)
+		logger.RespondError(c, err, http.StatusInternalServerError)
 		return
 	}
 

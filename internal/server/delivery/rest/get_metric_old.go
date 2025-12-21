@@ -20,17 +20,17 @@ func (h *Handler) getMetricOld(c *gin.Context) {
 
 	metric.MType = types.MetricType(c.Param("type"))
 	if !metric.MType.IsValid() {
-		logger.Error(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
+		logger.RespondError(c, errors.Errorf("некорректный тип метрики: %s", metric.MType), http.StatusBadRequest)
 		return
 	}
 
 	metric, err := h.service.GetMetric(ctx, metric)
 	if err != nil {
 		if errors.Is(err, errcodes.ErrMetricNotFound) {
-			logger.Error(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
+			logger.RespondError(c, errcodes.ErrMetricNotFound, http.StatusNotFound)
 			return
 		}
-		logger.InternalServerError(c, err)
+		logger.RespondError(c, err, http.StatusInternalServerError)
 		return
 	}
 

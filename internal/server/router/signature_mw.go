@@ -28,7 +28,7 @@ func SignatureMiddleware(key string) gin.HandlerFunc {
 		if c.GetHeader("HashSHA256") != "" {
 			bodyBytes, err := io.ReadAll(c.Request.Body)
 			if err != nil {
-				logger.InternalServerError(c, errors.Wrap(err, "не удалось прочитать тело запроса"))
+				logger.RespondError(c, errors.Wrap(err, "не удалось прочитать тело запроса"), http.StatusInternalServerError)
 				return
 			}
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
@@ -36,7 +36,7 @@ func SignatureMiddleware(key string) gin.HandlerFunc {
 			expectedHex := c.GetHeader("HashSHA256")
 			isValid := common.VerifyHMACSHA256([]byte(key), bodyBytes, expectedHex)
 			if !isValid {
-				logger.Error(c, errors.New("Хеш запроса недействителен"), http.StatusBadRequest)
+				logger.RespondError(c, errors.New("Хеш запроса недействителен"), http.StatusBadRequest)
 				return
 			}
 		}

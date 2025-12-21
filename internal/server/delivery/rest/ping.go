@@ -12,7 +12,7 @@ func (h *Handler) ping(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	if err := h.service.Ping(ctx); err != nil {
-		logger.InternalServerError(c, err)
+		logger.RespondError(c, err, http.StatusInternalServerError)
 		return
 	}
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
@@ -20,15 +20,15 @@ type Repository interface {
 }
 
 type Service struct {
-	config *serverconfig.Config
 	repo   Repository
+	config *config.ServerConfig
 	logger zerolog.Logger
 }
 
-func New(ctx context.Context, config *serverconfig.Config, repo Repository, logger zerolog.Logger) *Service {
+func New(ctx context.Context, repo Repository, config *config.ServerConfig, logger zerolog.Logger) *Service {
 	s := &Service{
-		config: config,
 		repo:   repo,
+		config: config,
 		logger: logger,
 	}
 	s.loadMetricsFromFile(ctx)

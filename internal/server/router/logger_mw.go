@@ -1,15 +1,11 @@
 package router
 
 import (
-	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
 // LoggerMiddleware добавляет zerolog в gin
@@ -20,10 +16,6 @@ func LoggerMiddleware(baseLogger zerolog.Logger) gin.HandlerFunc {
 			Str("url", c.Request.URL.Path).
 			Str("req_id", uuid.NewString()[:8]).
 			Logger()
-
-		// Кладём логгер в обычный контекст
-		ctx := context.WithValue(c.Request.Context(), logger.LogKey, &l)
-		c.Request = c.Request.WithContext(ctx)
 
 		start := time.Now()
 		c.Next()
@@ -37,11 +29,11 @@ func LoggerMiddleware(baseLogger zerolog.Logger) gin.HandlerFunc {
 
 		if len(c.Errors) > 0 || status >= 400 {
 			errLog := l.Error()
-			if status == http.StatusInternalServerError {
+			if status >= 500 {
 				errLog = errLog.Stack()
 			}
-			if len(c.Errors) > 0 {
-				errLog.Err(c.Errors[0].Err)
+			for _, e := range c.Errors {
+				errLog.Err(e.Err)
 			}
 			errLog.Msg("Ошибка выполнения запроса")
 			return

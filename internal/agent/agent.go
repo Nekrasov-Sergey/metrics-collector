@@ -20,18 +20,18 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/common"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
 type Agent struct {
-	config *agentconfig.Config
+	config *config.AgentConfig
 	client *resty.Client
 	logger zerolog.Logger
 }
 
-func New(config *agentconfig.Config, client *resty.Client, logger zerolog.Logger) *Agent {
+func New(config *config.AgentConfig, client *resty.Client, logger zerolog.Logger) *Agent {
 	return &Agent{
 		config: config,
 		client: client,

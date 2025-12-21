@@ -1,4 +1,4 @@
-package agentconfig
+package config
 
 import (
 	"flag"
@@ -8,27 +8,26 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-type Config struct {
-	Addr           string                `env:"ADDRESS"`
-	PollInterval   config.SecondDuration `env:"POLL_INTERVAL"`
-	ReportInterval config.SecondDuration `env:"REPORT_INTERVAL"`
-	Key            string                `env:"KEY"`
-	RateLimit      int                   `env:"RATE_LIMIT"`
+type AgentConfig struct {
+	Addr           string         `env:"ADDRESS"`
+	PollInterval   SecondDuration `env:"POLL_INTERVAL"`
+	ReportInterval SecondDuration `env:"REPORT_INTERVAL"`
+	Key            string         `env:"KEY"`
+	RateLimit      int            `env:"RATE_LIMIT"`
 }
 
-func New(logger zerolog.Logger) (*Config, error) {
-	addr := config.NetAddress{
+func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
+	addr := NetAddress{
 		Host: "localhost",
 		Port: 8080,
 	}
 	flag.Var(&addr, "a", "адрес HTTP-сервера")
 
-	pollInterval := config.SecondDuration(2 * time.Second)
-	reportInterval := config.SecondDuration(10 * time.Second)
+	pollInterval := SecondDuration(2 * time.Second)
+	reportInterval := SecondDuration(10 * time.Second)
 	flag.Var(&pollInterval, "p", "частота опроса метрик из пакета runtime в секундах")
 	flag.Var(&reportInterval, "r", "частота отправки метрик на сервер в секундах")
 
@@ -38,7 +37,7 @@ func New(logger zerolog.Logger) (*Config, error) {
 
 	flag.Parse()
 
-	cfg := Config{
+	cfg := AgentConfig{
 		Addr:           addr.String(),
 		PollInterval:   pollInterval,
 		ReportInterval: reportInterval,

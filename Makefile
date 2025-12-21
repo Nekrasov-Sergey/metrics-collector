@@ -28,6 +28,8 @@ gen:
 	@echo "🧰 Генерация моков..."
 	@rm -rf internal/server/service/mocks
 	@mkdir -p internal/server/service/mocks
+	@rm -rf internal/server/delivery/rest/mocks
+	@mkdir -p internal/server/delivery/rest/mocks
 	@go generate ./...
 
 .PHONY: cover
@@ -40,3 +42,10 @@ cover:
 	@echo ""
 	@echo "🌐 HTML-отчёт сохранён в: cover.html"
 	@go tool cover -html=cover.out -o cover.html
+
+.PHONY: deps
+deps:
+	@go get -u ./...
+	@go mod tidy
+	@go mod verify
+	@go build ./...

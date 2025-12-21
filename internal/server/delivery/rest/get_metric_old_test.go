@@ -13,11 +13,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
-	serverconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/server_config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
+	restMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest/mocks"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
+	serviceMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
@@ -30,7 +31,7 @@ func TestHandler_getMetricOld(t *testing.T) {
 
 	l := zerolog.Logger{}
 
-	cfg := &serverconfig.Config{
+	cfg := &config.ServerConfig{
 		StoreInterval: 1,
 	}
 
@@ -38,7 +39,8 @@ func TestHandler_getMetricOld(t *testing.T) {
 		url string
 	}
 	type buildMock struct {
-		repo *mocks.RepoMock
+		repo  *serviceMocks.RepoMock
+		audit *restMocks.AuditMock
 	}
 	type want struct {
 		code int
@@ -127,14 +129,15 @@ func TestHandler_getMetricOld(t *testing.T) {
 
 			ctrl := minimock.NewController(t)
 			mock := &buildMock{
-				repo: mocks.NewRepoMock(ctrl),
+				repo:  serviceMocks.NewRepoMock(ctrl),
+				audit: restMocks.NewAuditMock(ctrl),
 			}
 			tt.build(mock)
 
 			r := router.New(l, gin.TestMode, "")
 
-			s := service.New(ctx, cfg, mock.repo, l)
-			h := rest.New(cfg, s, l)
+			s := service.New(ctx, mock.repo, cfg, l)
+			h := rest.New(s, cfg, l, mock.audit)
 			h.RegisterRoutes(r)
 
 			srv := httptest.NewServer(r)

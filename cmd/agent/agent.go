@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent"
-	agentconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config/agent_config"
+	agentconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -27,7 +27,7 @@ func run() error {
 	l := logger.New()
 	client := resty.New()
 
-	cfg, err := agentconfig.New(l)
+	cfg, err := agentconfig.NewAgentConfig(l)
 	if err != nil {
 		return err
 	}

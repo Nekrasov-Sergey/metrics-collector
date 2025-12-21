@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -24,26 +23,12 @@ func New(handler http.Handler, addr string, logger zerolog.Logger) *Server {
 	}
 }
 
-func (s *Server) Run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		s.logger.Info().Msgf("Сервер запущен на %s", s.httpServer.Addr)
-		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error().Err(err).Msg("Ошибка при запуске сервера")
-			cancel()
-		}
-	}()
+func (s *Server) Run() error {
+	s.logger.Info().Msgf("Сервер запущен на %s", s.httpServer.Addr)
 
-	<-ctx.Done()
-	s.logger.Info().Msg("Остановка сервера...")
-
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shutdownCancel()
-	if err := s.Shutdown(shutdownCtx); err != nil {
-		return err
+	if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return errors.Wrap(err, "ошибка при запуске сервера")
 	}
-
-	s.logger.Info().Msg("Сервер остановлен")
 	return nil
 }
 
