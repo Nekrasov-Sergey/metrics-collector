@@ -11,9 +11,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.uber.org/multierr"
 
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/audit"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/audit"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/postgres"

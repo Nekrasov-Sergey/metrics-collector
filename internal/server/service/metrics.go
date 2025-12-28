@@ -10,7 +10,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
-func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
+func (s *Service) UpdateMetric(ctx context.Context, metric *types.Metric) error {
 	if err := s.repo.UpdateMetric(ctx, metric); err != nil {
 		return err
 	}
@@ -22,8 +22,8 @@ func (s *Service) UpdateMetric(ctx context.Context, metric types.Metric) error {
 	return nil
 }
 
-func (s *Service) GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error) {
-	return s.repo.GetMetric(ctx, rowMetric)
+func (s *Service) GetMetric(ctx context.Context, rawMetric *types.Metric) (metric *types.Metric, err error) {
+	return s.repo.GetMetric(ctx, rawMetric)
 }
 
 func (s *Service) GetMetrics(ctx context.Context) (metrics []types.Metric, err error) {

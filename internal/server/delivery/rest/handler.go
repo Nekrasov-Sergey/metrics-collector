@@ -11,8 +11,8 @@ import (
 )
 
 type Service interface {
-	UpdateMetric(ctx context.Context, metric types.Metric) error
-	GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error)
+	UpdateMetric(ctx context.Context, metric *types.Metric) error
+	GetMetric(ctx context.Context, rawMetric *types.Metric) (metric *types.Metric, err error)
 	GetMetrics(ctx context.Context) (metrics []types.Metric, err error)
 	SaveMetricsToFile(ctx context.Context)
 	Ping(ctx context.Context) error
