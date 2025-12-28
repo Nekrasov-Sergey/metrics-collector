@@ -71,30 +71,35 @@ load-test:
 pprof-base:
 	@mkdir -p $(PROFILES_DIR)
 	@echo "сбор базового heap профиля"
-	go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(BASE_PROFILE)
+	@go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(BASE_PROFILE)
 
 .PHONY: pprof-ui-base
 pprof-ui-base:
 	@echo "pprof ui (base) → http://localhost:6060"
-	go tool pprof -http=:6060 $(BASE_PROFILE)
+	@go tool pprof -http=:6060 $(BASE_PROFILE)
 
 .PHONY: pprof-result
 pprof-result:
 	@mkdir -p $(PROFILES_DIR)
 	@echo "сбор итогового heap профиля"
-	go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(RESULT_PROFILE)
+	@go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(RESULT_PROFILE)
 
 .PHONY: pprof-ui-result
 pprof-ui-result:
 	@echo "pprof ui (result) → http://localhost:6060"
-	go tool pprof -http=:6060 $(RESULT_PROFILE)
+	@go tool pprof -http=:6060 $(RESULT_PROFILE)
 
 .PHONY: pprof-diff
 pprof-diff:
 	@echo "pprof diff (base → result)"
-	go tool pprof -top -diff_base=$(BASE_PROFILE) $(RESULT_PROFILE)
+	@go tool pprof -top -diff_base=$(BASE_PROFILE) $(RESULT_PROFILE)
 
 .PHONY: pprof-ui-diff
 pprof-ui-diff:
 	@echo "pprof diff ui → http://localhost:6060"
-	go tool pprof -http=:6060 -diff_base=$(BASE_PROFILE) $(RESULT_PROFILE)
+	@go tool pprof -http=:6060 -diff_base=$(BASE_PROFILE) $(RESULT_PROFILE)
+
+.PHONY: fmt
+fmt:
+	@echo "форматирование проекта (goimports)"
+	@goimports -w .
