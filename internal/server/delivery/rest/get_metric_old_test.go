@@ -58,7 +58,7 @@ func TestHandler_getMetricOld(t *testing.T) {
 				url: "/value/gauge/Alloc",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{
+				m.repo.GetMetricMock.Return(&types.Metric{
 					MType: types.Gauge,
 					Value: utils.Ptr(float64(123)),
 				}, nil)
@@ -74,7 +74,7 @@ func TestHandler_getMetricOld(t *testing.T) {
 				url: "/value/counter/PollCount",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{
+				m.repo.GetMetricMock.Return(&types.Metric{
 					MType: types.Counter,
 					Delta: utils.Ptr(int64(10)),
 				}, nil)
@@ -102,7 +102,7 @@ func TestHandler_getMetricOld(t *testing.T) {
 				url: "/value/gauge/Alloc12",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{}, errcodes.ErrMetricNotFound)
+				m.repo.GetMetricMock.Return(nil, errcodes.ErrMetricNotFound)
 			},
 			want: want{
 				code: http.StatusNotFound,
@@ -115,7 +115,7 @@ func TestHandler_getMetricOld(t *testing.T) {
 				url: "/value/gauge/Alloc",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{}, errors.New("не удалось получить метрику"))
+				m.repo.GetMetricMock.Return(nil, errors.New("не удалось получить метрику"))
 			},
 			want: want{
 				code: http.StatusInternalServerError,

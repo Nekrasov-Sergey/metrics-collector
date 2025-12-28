@@ -14,7 +14,7 @@ import (
 func (h *Handler) getMetricOld(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	var metric types.Metric
+	metric := &types.Metric{}
 
 	metric.Name = types.MetricName(c.Param("name"))
 

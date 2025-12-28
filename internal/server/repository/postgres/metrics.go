@@ -12,7 +12,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 )
 
-func (p *Postgres) UpdateMetric(ctx context.Context, metric types.Metric) error {
+func (p *Postgres) UpdateMetric(ctx context.Context, metric *types.Metric) error {
 	const q = `insert into metrics (name, type, delta, value)
 values (:name, :type, :delta, :value)
 on conflict (name) do update
@@ -20,31 +20,22 @@ on conflict (name) do update
                     when excluded.type = 'counter' then metrics.delta + excluded.delta
                     else excluded.delta
         end,
-        value = excluded.value
-`
+        value = excluded.value`
 
-	args := map[string]any{
-		"name":  metric.Name,
-		"type":  metric.MType,
-		"delta": metric.Delta,
-		"value": metric.Value,
-	}
-	if err := dbutils.NamedExec(ctx, p.db, q, args); err != nil {
+	if err := dbutils.NamedExec(ctx, p.db, q, metric); err != nil {
 		return errors.Wrapf(err, "не удалось обновить метрику %q", metric.Name)
 	}
 
 	return nil
 }
 
-func (p *Postgres) GetMetric(ctx context.Context, rowMetric types.Metric) (metric types.Metric, err error) {
+func (p *Postgres) GetMetric(ctx context.Context, rawMetric *types.Metric) (metric *types.Metric, err error) {
 	const q = `select name, type, delta, value
 from metrics
 where name = :name`
 
-	args := map[string]any{
-		"name": rowMetric.Name,
-	}
-	if err = dbutils.NamedGet(ctx, p.db, &metric, q, args); err != nil {
+	metric = &types.Metric{}
+	if err = dbutils.NamedGet(ctx, p.db, metric, q, rawMetric); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return metric, errcodes.ErrMetricNotFound
 		}
@@ -72,8 +63,7 @@ on conflict (name) do update
                     when excluded.type = 'counter' then metrics.delta + excluded.delta
                     else excluded.delta
         end,
-        value = excluded.value
-        `
+        value = excluded.value`
 
 	return dbutils.WrapTxx(ctx, p.db, nil, func(tx *sqlx.Tx) error {
 		for _, metric := range metrics {

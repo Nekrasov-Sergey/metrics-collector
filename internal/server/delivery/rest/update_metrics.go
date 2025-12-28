@@ -14,7 +14,7 @@ import (
 func (h *Handler) updateMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	metrics := make([]types.Metric, 0)
+	var metrics []types.Metric
 	if err := c.ShouldBindJSON(&metrics); err != nil {
 		logger.RespondError(c, errors.Wrap(err, "не удалось распарсить метрики"), http.StatusBadRequest)
 		return

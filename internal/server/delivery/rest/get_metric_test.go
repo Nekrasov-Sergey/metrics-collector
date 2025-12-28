@@ -19,7 +19,6 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	serviceMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
 )
 
@@ -63,7 +62,7 @@ func TestHandler_getMetric(t *testing.T) {
 }`,
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{}, nil)
+				m.repo.GetMetricMock.Return(nil, nil)
 			},
 			want: want{
 				code: http.StatusOK,
@@ -126,7 +125,7 @@ func TestHandler_getMetric(t *testing.T) {
 }`,
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{}, errcodes.ErrMetricNotFound)
+				m.repo.GetMetricMock.Return(nil, errcodes.ErrMetricNotFound)
 			},
 			want: want{
 				code: http.StatusNotFound,
@@ -144,7 +143,7 @@ func TestHandler_getMetric(t *testing.T) {
 }`,
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(types.Metric{}, errors.New("не удалось получить метрику"))
+				m.repo.GetMetricMock.Return(nil, errors.New("не удалось получить метрику"))
 			},
 			want: want{
 				code: http.StatusInternalServerError,

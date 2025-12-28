@@ -42,3 +42,15 @@ git fetch template && git checkout template/v2 .github
 - **Clean Architecture**
 - **Hexagonal Architecture**
 - **Layered Architecture**
+
+## Результаты оптимизации проекта
+
+-1028kB bufio.NewReaderSize
+
+-1025kB github.com/jackc/pgx/v5/pgproto3.NewFrontend
+
+-1024kB github.com/jackc/pgx/v5/pgtype.NewMap
+
+-1533kB database/sql.(*DB).QueryContext
+
+-2553kB github.com/gin-gonic/gin.(*Context).Next

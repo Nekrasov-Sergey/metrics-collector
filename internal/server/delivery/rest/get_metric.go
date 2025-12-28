@@ -14,8 +14,8 @@ import (
 func (h *Handler) getMetric(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	var metric types.Metric
-	if err := c.ShouldBindJSON(&metric); err != nil {
+	metric := &types.Metric{}
+	if err := c.ShouldBindJSON(metric); err != nil {
 		logger.RespondError(c, errors.Wrap(err, "не удалось распарсить тело запроса"), http.StatusBadRequest)
 		return
 	}

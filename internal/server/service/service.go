@@ -11,8 +11,8 @@ import (
 
 //go:generate minimock -i github.com/Nekrasov-Sergey/metrics-collector/internal/server/service.Repository -o ./mocks/repo.go -n RepoMock
 type Repository interface {
-	UpdateMetric(ctx context.Context, metric types.Metric) error
-	GetMetric(_ context.Context, rowMetric types.Metric) (types.Metric, error)
+	UpdateMetric(ctx context.Context, metric *types.Metric) error
+	GetMetric(_ context.Context, rawMetric *types.Metric) (*types.Metric, error)
 	GetMetrics(_ context.Context) ([]types.Metric, error)
 	UpdateMetrics(_ context.Context, metrics []types.Metric) error
 	Ping(ctx context.Context) error
