@@ -12,7 +12,27 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func (h *Handler) updateMetricOld(c *gin.Context) {
+// UpdateMetricByPath обновляет значение метрики по имени, типу и значению, переданным в параметрах пути.
+//
+// Ожидает следующие path-параметры:
+//   - type  — тип метрики (gauge или counter)
+//   - name  — имя метрики
+//   - value — новое значение метрики
+//
+// Пример запроса:
+//
+//	POST /update/gauge/Alloc/123.45
+//
+// Поведение по типу метрики:
+//   - gauge   — значение value парсится как float64
+//   - counter — значение value парсится как int64
+//
+// Возможные ответы:
+//   - 200 OK — метрика успешно обновлена
+//   - 400 Bad Request — некорректный тип метрики или значение value
+//   - 404 Not Found — имя метрики не указано
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) UpdateMetricByPath(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metric := &types.Metric{}

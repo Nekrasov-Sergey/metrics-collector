@@ -1,7 +1,11 @@
 package types
 
+// MetricName представляет имя метрики сервиса.
 type MetricName string
 
+// Набор поддерживаемых имен метрик.
+//
+// Используется для идентификации метрик при сборе, хранении и передаче данных между компонентами сервиса.
 const (
 	Alloc         MetricName = "Alloc"
 	BuckHashSys   MetricName = "BuckHashSys"

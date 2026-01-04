@@ -57,8 +57,15 @@ func run() (err error) {
 		repo = memstorage.New()
 	}
 
-	s := service.New(ctx, repo, cfg, l)
-	h := rest.New(s, cfg, l, auditLogger)
+	s := service.New(
+		ctx,
+		repo,
+		l,
+		service.WithStoreInterval(cfg.StoreInterval),
+		service.WithRestore(cfg.Restore),
+		service.WithFileStoragePath(cfg.FileStoragePath),
+	)
+	h := rest.New(s, auditLogger, l, rest.WithStoreInterval(cfg.StoreInterval))
 	h.RegisterRoutes(r)
 
 	if cfg.DatabaseDSN == "" {

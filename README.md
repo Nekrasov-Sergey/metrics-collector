@@ -54,3 +54,6 @@ git fetch template && git checkout template/v2 .github
 -1533kB database/sql.(*DB).QueryContext
 
 -2553kB github.com/gin-gonic/gin.(*Context).Next
+
+## Покрытие тестами пакета internal
+90% files, 86% statements

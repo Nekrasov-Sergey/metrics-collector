@@ -60,7 +60,7 @@ PPROF_HEAP_URL := http://localhost:8080/debug/pprof/heap
 
 .PHONY: load-test
 load-test:
-	@echo "запуск нагрузочного теста (POST /value)"
+	@echo "Запуск нагрузочного теста (POST /value)"
 	hey -n 100000 -c 1000 \
 		-m POST \
 		-H "Content-Type: application/json" \
@@ -70,7 +70,7 @@ load-test:
 .PHONY: pprof-base
 pprof-base:
 	@mkdir -p $(PROFILES_DIR)
-	@echo "сбор базового heap профиля"
+	@echo "Сбор базового heap профиля"
 	@go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(BASE_PROFILE)
 
 .PHONY: pprof-ui-base
@@ -81,7 +81,7 @@ pprof-ui-base:
 .PHONY: pprof-result
 pprof-result:
 	@mkdir -p $(PROFILES_DIR)
-	@echo "сбор итогового heap профиля"
+	@echo "Сбор итогового heap профиля"
 	@go tool pprof -seconds=30 -proto $(PPROF_HEAP_URL) > $(RESULT_PROFILE)
 
 .PHONY: pprof-ui-result
@@ -101,5 +101,10 @@ pprof-ui-diff:
 
 .PHONY: fmt
 fmt:
-	@echo "форматирование проекта (goimports)"
+	@echo "Форматирование проекта..."
 	@goimports -w .
+
+.PHONY: doc
+doc:
+	@echo "Документация сервиса http://localhost:6060/pkg/github.com/Nekrasov-Sergey/metrics-collector?m=all"
+	@godoc -http=:6060 -play

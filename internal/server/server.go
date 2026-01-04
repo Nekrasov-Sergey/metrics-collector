@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Server инкапсулирует http-сервер приложения.
 type Server struct {
 	httpServer *http.Server
 	logger     zerolog.Logger
@@ -23,6 +24,7 @@ func New(handler http.Handler, addr string, logger zerolog.Logger) *Server {
 	}
 }
 
+// Run запускает HTTP-сервер.
 func (s *Server) Run() error {
 	s.logger.Info().Msgf("Сервер запущен на %s", s.httpServer.Addr)
 
@@ -32,6 +34,7 @@ func (s *Server) Run() error {
 	return nil
 }
 
+// Shutdown корректно останавливает сервер.
 func (s *Server) Shutdown(shutdownCtx context.Context) error {
 	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
 		return errors.Wrap(err, "ошибка при остановке сервера")

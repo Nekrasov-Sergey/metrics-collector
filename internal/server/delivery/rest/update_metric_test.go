@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	restMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest/mocks"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
@@ -27,10 +26,6 @@ func TestHandler_updateMetric(t *testing.T) {
 	ctx := context.Background()
 
 	l := zerolog.Logger{}
-
-	cfg := &config.ServerConfig{
-		StoreInterval: 1,
-	}
 
 	type args struct {
 		url  string
@@ -63,6 +58,7 @@ func TestHandler_updateMetric(t *testing.T) {
 			},
 			build: func(m *buildMock) {
 				m.repo.UpdateMetricMock.Return(nil)
+				m.repo.GetMetricsMock.Return(nil, nil)
 			},
 			want: want{
 				code: http.StatusOK,
@@ -81,6 +77,7 @@ func TestHandler_updateMetric(t *testing.T) {
 			},
 			build: func(m *buildMock) {
 				m.repo.UpdateMetricMock.Return(nil)
+				m.repo.GetMetricsMock.Return(nil, nil)
 			},
 			want: want{
 				code: http.StatusOK,
@@ -201,8 +198,8 @@ func TestHandler_updateMetric(t *testing.T) {
 
 			r := router.New(l, gin.TestMode, "")
 
-			s := service.New(ctx, mock.repo, cfg, l)
-			h := rest.New(s, cfg, l, mock.audit)
+			s := service.New(ctx, mock.repo, l)
+			h := rest.New(s, mock.audit, l)
 			h.RegisterRoutes(r)
 
 			srv := httptest.NewServer(r)

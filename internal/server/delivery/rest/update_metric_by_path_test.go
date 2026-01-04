@@ -13,27 +13,19 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
 	restMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest/mocks"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	serviceMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/errcodes"
-	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
-func TestHandler_getMetricOld(t *testing.T) {
+func TestHandler_updateMetricByPath(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
 	l := zerolog.Logger{}
-
-	cfg := &config.ServerConfig{
-		StoreInterval: 1,
-	}
 
 	type args struct {
 		url string
@@ -55,39 +47,45 @@ func TestHandler_getMetricOld(t *testing.T) {
 		{
 			name: "SuccessGauge",
 			args: args{
-				url: "/value/gauge/Alloc",
+				url: "/update/gauge/Alloc/12.3",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(&types.Metric{
-					MType: types.Gauge,
-					Value: utils.Ptr(float64(123)),
-				}, nil)
+				m.repo.UpdateMetricMock.Return(nil)
+				m.repo.GetMetricsMock.Return(nil, nil)
 			},
 			want: want{
 				code: http.StatusOK,
-				body: "123",
 			},
 		},
 		{
 			name: "SuccessCounter",
 			args: args{
-				url: "/value/counter/PollCount",
+				url: "/update/counter/PollCount/5",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(&types.Metric{
-					MType: types.Counter,
-					Delta: utils.Ptr(int64(10)),
-				}, nil)
+				m.repo.UpdateMetricMock.Return(nil)
+				m.repo.GetMetricsMock.Return(nil, nil)
 			},
 			want: want{
 				code: http.StatusOK,
-				body: "10",
+			},
+		},
+		{
+			name: "NameNotFound",
+			args: args{
+				url: "/update/gauge//12.3",
+			},
+			build: func(m *buildMock) {
+			},
+			want: want{
+				code: http.StatusNotFound,
+				body: "отсутствует имя метрики",
 			},
 		},
 		{
 			name: "IncorrectType",
 			args: args{
-				url: "/value/GAUGE/Alloc",
+				url: "/update/GAUGE/Alloc/12.3",
 			},
 			build: func(m *buildMock) {
 			},
@@ -97,25 +95,36 @@ func TestHandler_getMetricOld(t *testing.T) {
 			},
 		},
 		{
-			name: "MetricNotFound",
+			name: "IncorrectGaugeValue",
 			args: args{
-				url: "/value/gauge/Alloc12",
+				url: "/update/gauge/Alloc/twelve",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(nil, errcodes.ErrMetricNotFound)
 			},
 			want: want{
-				code: http.StatusNotFound,
-				body: errcodes.ErrMetricNotFound.Error(),
+				code: http.StatusBadRequest,
+				body: "значение метрики не float64",
+			},
+		},
+		{
+			name: "IncorrectCounterValue",
+			args: args{
+				url: "/update/counter/PollCount/10.5",
+			},
+			build: func(m *buildMock) {
+			},
+			want: want{
+				code: http.StatusBadRequest,
+				body: "значение метрики не int64",
 			},
 		},
 		{
 			name: "InternalServerError",
 			args: args{
-				url: "/value/gauge/Alloc",
+				url: "/update/gauge/Alloc/12.3",
 			},
 			build: func(m *buildMock) {
-				m.repo.GetMetricMock.Return(nil, errors.New("не удалось получить метрику"))
+				m.repo.UpdateMetricMock.Return(errors.New("не удалось обновить метрику"))
 			},
 			want: want{
 				code: http.StatusInternalServerError,
@@ -136,15 +145,15 @@ func TestHandler_getMetricOld(t *testing.T) {
 
 			r := router.New(l, gin.TestMode, "")
 
-			s := service.New(ctx, mock.repo, cfg, l)
-			h := rest.New(s, cfg, l, mock.audit)
+			s := service.New(ctx, mock.repo, l)
+			h := rest.New(s, mock.audit, l)
 			h.RegisterRoutes(r)
 
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
 			client := resty.New()
-			resp, err := client.R().Get(srv.URL + tt.args.url)
+			resp, err := client.R().Post(srv.URL + tt.args.url)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.code, resp.StatusCode())
 			if tt.want.body != "" {

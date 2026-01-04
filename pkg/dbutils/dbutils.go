@@ -13,6 +13,7 @@ import (
 	"go.uber.org/multierr"
 )
 
+// NamedGet выполняет SQL-запрос с именованными параметрами и загружает одну запись в dest.
 func NamedGet(ctx context.Context, db sqlx.ExtContext, dest any, q string, arg any) error {
 	nq, args, err := db.BindNamed(q, arg)
 	if err != nil {
@@ -27,6 +28,7 @@ func NamedGet(ctx context.Context, db sqlx.ExtContext, dest any, q string, arg a
 	})
 }
 
+// NamedSelect выполняет SQL-запрос с именованными параметрами и загружает результат в слайс dest.
 func NamedSelect(ctx context.Context, db sqlx.ExtContext, dest any, q string, arg any) error {
 	nq, args, err := db.BindNamed(q, arg)
 	if err != nil {
@@ -41,6 +43,7 @@ func NamedSelect(ctx context.Context, db sqlx.ExtContext, dest any, q string, ar
 	})
 }
 
+// NamedExec выполняет SQL-запрос с именованными параметрами без возврата данных.
 func NamedExec(ctx context.Context, db sqlx.ExtContext, q string, arg any) error {
 	nq, args, err := db.BindNamed(q, arg)
 	if err != nil {
@@ -97,12 +100,15 @@ func isConnectionError(err error) bool {
 	return false
 }
 
+// DB описывает минимальный интерфейс базы данных, необходимый для работы с транзакциями.
 type DB interface {
 	BeginTxx(ctx context.Context, opts *sql.TxOptions) (*sqlx.Tx, error)
 }
 
+// TxFunc описывает функцию, выполняемую внутри транзакции.
 type TxFunc func(tx *sqlx.Tx) error
 
+// WrapTxx выполняет функцию внутри транзакции.
 func WrapTxx(ctx context.Context, db DB, opts *sql.TxOptions, f TxFunc) (err error) {
 	tx, err := db.BeginTxx(ctx, opts)
 	if err != nil {

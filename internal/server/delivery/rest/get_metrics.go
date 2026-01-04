@@ -14,7 +14,16 @@ import (
 //go:embed static/metrics.html
 var metricsHTML string
 
-func (h *Handler) getMetrics(c *gin.Context) {
+// GetMetrics возвращает HTML-страницу со списком всех метрик.
+//
+// Пример запроса:
+//
+//	GET /
+//
+// Возможные ответы:
+//   - 200 OK — HTML-страница со списком метрик успешно сформирована
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) GetMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metrics, err := h.service.GetMetrics(ctx)

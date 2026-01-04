@@ -7,6 +7,9 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 )
 
+// MemStorage реализует in-memory хранилище метрик.
+//
+// Используется для хранения метрик в оперативной памяти с защитой от конкурентного доступа.
 type MemStorage struct {
 	mu      *sync.Mutex
 	metrics map[types.MetricName]*types.Metric

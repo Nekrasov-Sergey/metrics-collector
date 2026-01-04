@@ -25,6 +25,9 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
+// Agent реализует агент сбора и отправки метрик.
+//
+// Агент периодически собирает системные метрики, агрегирует их и отправляет на сервер метрик.
 type Agent struct {
 	config *config.AgentConfig
 	client *resty.Client
@@ -39,6 +42,9 @@ func New(config *config.AgentConfig, client *resty.Client, logger zerolog.Logger
 	}
 }
 
+// Run запускает основной цикл работы агента.
+//
+// Метод стартует горутины сбора метрик и воркеры их отправки.
 func (a *Agent) Run(ctx context.Context) error {
 	a.logger.Info().Msg("Запущен агент для сбора метрик")
 
@@ -93,6 +99,9 @@ func (a *Agent) Run(ctx context.Context) error {
 	return nil
 }
 
+// Poll периодически собирает базовые runtime-метрики.
+//
+// Сбор выполняется по тикеру и результаты отправляются в канал metricsChan.
 func (a *Agent) Poll(ctx context.Context, metricsChan chan<- []types.Metric, pollTicker *time.Ticker) {
 	for {
 		select {
@@ -128,6 +137,9 @@ func (a *Agent) Poll(ctx context.Context, metricsChan chan<- []types.Metric, pol
 	}
 }
 
+// AdditionalPoll периодически собирает дополнительные системные метрики.
+//
+// Включает информацию о памяти, загрузке CPU и другие метрики операционной системы.
 func (a *Agent) AdditionalPoll(ctx context.Context, metricsChan chan<- []types.Metric, pollTicker *time.Ticker) {
 	for {
 		select {
@@ -179,6 +191,9 @@ func (a *Agent) AdditionalPoll(ctx context.Context, metricsChan chan<- []types.M
 	}
 }
 
+// Report запускает воркер отправки метрик на сервер.
+//
+// Воркер периодически читает накопленные метрики из канала и отправляет их на сервер с учетом ограничений и ретраев.
 func (a *Agent) Report(ctx context.Context, metricsChan <-chan []types.Metric, reportTicker *time.Ticker, w int) {
 	a.logger.Info().Int("воркер", w).Msg("Запущен воркер")
 

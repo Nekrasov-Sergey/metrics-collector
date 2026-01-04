@@ -30,8 +30,6 @@ func TestRunAgent(t *testing.T) {
 
 	l := logger.New()
 
-	cfg := &config.ServerConfig{}
-
 	type buildMock struct {
 		repo  *serviceMocks.RepoMock
 		audit *restMocks.AuditMock
@@ -44,6 +42,7 @@ func TestRunAgent(t *testing.T) {
 			name: "Success",
 			build: func(m *buildMock) {
 				m.repo.UpdateMetricsMock.Return(nil)
+				m.repo.GetMetricsMock.Return(nil, nil)
 				m.audit.InfoMock.Return()
 			},
 		},
@@ -60,8 +59,8 @@ func TestRunAgent(t *testing.T) {
 			tt.build(mock)
 
 			r := router.New(l, gin.TestMode, "")
-			s := service.New(ctx, mock.repo, cfg, l)
-			h := rest.New(s, cfg, l, mock.audit)
+			s := service.New(ctx, mock.repo, l)
+			h := rest.New(s, mock.audit, l)
 			h.RegisterRoutes(r)
 			srv := httptest.NewServer(r)
 			defer srv.Close()

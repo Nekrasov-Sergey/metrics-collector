@@ -11,6 +11,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
+// AgentConfig содержит конфигурацию агента сбора метрик.
 type AgentConfig struct {
 	Addr           string         `env:"ADDRESS"`
 	PollInterval   SecondDuration `env:"POLL_INTERVAL"`

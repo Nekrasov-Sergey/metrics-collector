@@ -11,6 +11,7 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
+// ServerConfig содержит конфигурацию сервера метрик.
 type ServerConfig struct {
 	Addr            string         `env:"ADDRESS"`
 	StoreInterval   SecondDuration `env:"STORE_INTERVAL"`
