@@ -10,7 +10,29 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) updateMetric(c *gin.Context) {
+// UpdateMetric обновляет значение метрики на основе JSON-тела запроса.
+//
+// Ожидает JSON с полями:
+//   - id  — имя метрики (обязательное)
+//   - type — тип метрики: "gauge" или "counter" (обязательное)
+//   - value — для gauge: новое значение float64
+//   - delta — для counter: новое значение int64
+//
+// Пример запроса:
+//
+//	POST /value
+//	{
+//	  "id": "Alloc",
+//	  "type": "gauge",
+//	  "value": 123.45
+//	}
+//
+// Возможные ответы:
+//   - 200 OK — метрика успешно обновлена
+//   - 400 Bad Request — некорректное тело запроса, отсутствие имени или значения, некорректный тип метрики
+//   - 404 Not Found — имя метрики не указано
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) UpdateMetric(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metric := &types.Metric{}

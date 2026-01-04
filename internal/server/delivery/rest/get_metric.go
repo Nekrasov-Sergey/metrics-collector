@@ -11,7 +11,26 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) getMetric(c *gin.Context) {
+// GetMetric возвращает значение метрики по имени и типу.
+//
+// Ожидает JSON-тело запроса со следующими полями:
+//   - id — имя метрики
+//   - type — тип метрики (gauge или counter)
+//
+// Пример запроса:
+//
+//	POST /value
+//	{
+//	  "id": "Alloc",
+//	  "type": "gauge"
+//	}
+//
+// Возможные ответы:
+//   - 200 OK — метрика успешно найдена и возвращена
+//   - 400 Bad Request — некорректное тело запроса или тип метрики
+//   - 404 Not Found — имя метрики не указано или метрика не найдена
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) GetMetric(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metric := &types.Metric{}

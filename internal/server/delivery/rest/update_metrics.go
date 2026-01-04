@@ -11,7 +11,38 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) updateMetrics(c *gin.Context) {
+// UpdateMetrics обновляет несколько метрик одновременно на основе JSON-массива.
+//
+// Ожидает JSON-массив объектов с полями:
+//   - id  — имя метрики (обязательное)
+//   - type — тип метрики: "gauge" или "counter" (обязательное)
+//   - value — для gauge: новое значение float64
+//   - delta — для counter: новое значение int64
+//
+// Пример запроса:
+//
+//	POST /updates
+//	[
+//	  {
+//	    "id": "Alloc",
+//	    "type": "gauge",
+//	    "value": 123.45
+//	  },
+//	  {
+//	    "id": "PollCount",
+//	    "type": "counter",
+//	    "delta": 5
+//	  }
+//	]
+//
+// После успешного обновления создается событие аудита с именами обновленных метрик и IP клиента.
+//
+// Возможные ответы:
+//   - 200 OK — все метрики успешно обновлены
+//   - 400 Bad Request — некорректное тело запроса, отсутствие имени или значения, некорректный тип метрики
+//   - 404 Not Found — имя одной из метрик не указано
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) UpdateMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var metrics []types.Metric

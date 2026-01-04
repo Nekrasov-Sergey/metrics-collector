@@ -15,7 +15,7 @@ func (s *Service) UpdateMetric(ctx context.Context, metric *types.Metric) error 
 		return err
 	}
 
-	if s.config.StoreInterval == 0 {
+	if s.storeInterval == 0 {
 		s.SaveMetricsToFile(ctx)
 	}
 
@@ -31,11 +31,11 @@ func (s *Service) GetMetrics(ctx context.Context) (metrics []types.Metric, err e
 }
 
 func (s *Service) loadMetricsFromFile(ctx context.Context) {
-	if !s.config.Restore {
+	if !s.restore {
 		return
 	}
 
-	data, err := os.ReadFile(s.config.FileStoragePath)
+	data, err := os.ReadFile(s.fileStoragePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			s.logger.Info().Msg("Файл для загрузки метрик не существует")
@@ -72,12 +72,12 @@ func (s *Service) SaveMetricsToFile(ctx context.Context) {
 		return
 	}
 
-	if err := os.MkdirAll(filepath.Dir(s.config.FileStoragePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.fileStoragePath), 0755); err != nil {
 		s.logger.Error().Err(err).Msg("не удалось создать директорию для записи метрик")
 		return
 	}
 
-	if err := os.WriteFile(s.config.FileStoragePath, data, 0644); err != nil {
+	if err := os.WriteFile(s.fileStoragePath, data, 0644); err != nil {
 		s.logger.Error().Err(err).Msg("Не удалось записать метрики в файл")
 		return
 	}
@@ -90,5 +90,13 @@ func (s *Service) Ping(ctx context.Context) error {
 }
 
 func (s *Service) UpdateMetrics(ctx context.Context, metrics []types.Metric) error {
-	return s.repo.UpdateMetrics(ctx, metrics)
+	if err := s.repo.UpdateMetrics(ctx, metrics); err != nil {
+		return err
+	}
+
+	if s.storeInterval == 0 {
+		s.SaveMetricsToFile(ctx)
+	}
+
+	return nil
 }

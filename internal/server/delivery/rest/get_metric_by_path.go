@@ -11,7 +11,22 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) getMetricOld(c *gin.Context) {
+// GetMetricByPath возвращает значение метрики по имени и типу.
+//
+// Ожидает следующие path-параметры:
+//   - name — имя метрики
+//   - type — тип метрики (gauge или counter)
+//
+// Пример запроса:
+//
+//	GET /value/gauge/Alloc
+//
+// Возможные ответы:
+//   - 200 OK — метрика успешно найдена
+//   - 400 Bad Request — некорректный тип метрики
+//   - 404 Not Found — метрика не найдена
+//   - 500 Internal Server Error — внутренняя ошибка сервиса
+func (h *Handler) GetMetricByPath(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	metric := &types.Metric{}

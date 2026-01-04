@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Postgres реализует хранилище метрик на базе PostgreSQL.
 type Postgres struct {
 	db     *sqlx.DB
 	logger zerolog.Logger

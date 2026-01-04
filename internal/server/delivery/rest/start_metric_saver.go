@@ -5,10 +5,14 @@ import (
 	"time"
 )
 
+// StartMetricSaver запускает фоновое периодическое сохранение метрик в файл.
+//
+// Сохранение выполняется с интервалом, заданным в конфигурации StoreInterval.
+// Если StoreInterval меньше либо равен нулю, фоновая задача не запускается.
 func (h *Handler) StartMetricSaver(ctx context.Context) {
-	if h.config.StoreInterval > 0 {
+	if h.storeInterval > 0 {
 		go func() {
-			storeTicker := time.NewTicker(time.Duration(h.config.StoreInterval))
+			storeTicker := time.NewTicker(time.Duration(h.storeInterval))
 			for {
 				select {
 				case <-ctx.Done():

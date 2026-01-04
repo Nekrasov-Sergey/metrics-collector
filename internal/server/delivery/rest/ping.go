@@ -8,7 +8,16 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func (h *Handler) ping(c *gin.Context) {
+// Ping проверяет доступность сервиса и соединение с базой данных.
+//
+// Пример запроса:
+//
+//	GET /ping
+//
+// Возможные ответы:
+//   - 200 OK — соединение с базой данных успешно, сервис работает
+//   - 500 Internal Server Error — внутренняя ошибка сервиса или недоступна база данных
+func (h *Handler) Ping(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	if err := h.service.Ping(ctx); err != nil {
