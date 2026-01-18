@@ -108,3 +108,9 @@ fmt:
 doc:
 	@echo "Документация сервиса http://localhost:6060/pkg/github.com/Nekrasov-Sergey/metrics-collector?m=all"
 	@godoc -http=:6060 -play
+
+.PHONY: staticlint
+staticlint:
+	@go run ./cmd/staticlint $$(go list ./... | \
+		grep -v /internal/server/service/mocks | \
+		grep -v /internal/server/delivery/rest/mocks)

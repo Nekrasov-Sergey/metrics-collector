@@ -76,10 +76,10 @@ func TestRunAgent(t *testing.T) {
 
 			a := agent.New(agentCfg, client, logger.New())
 
-			ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+			runCtx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 			defer cancel()
 
-			err := a.Run(ctx)
+			err := a.Run(runCtx)
 			require.NoError(t, err)
 		})
 	}
