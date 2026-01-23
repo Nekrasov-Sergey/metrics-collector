@@ -40,7 +40,7 @@ type Service interface {
 // Используется Handler для регистрации значимых событий,
 // связанных с работой сервиса.
 //
-//go:generate minimock -i github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest.Audit -o ./mocks/audit.go -n AuditMock
+//go:generate minimock -i Audit -o ./mocks/audit.go -n AuditMock
 type Audit interface {
 	// Info регистрирует информационное событие аудита.
 	Info(ctx context.Context, event *types.AuditEvent)

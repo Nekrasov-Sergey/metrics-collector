@@ -14,7 +14,7 @@ import (
 // Инкапсулирует операции получения, обновления и хранения метрик,
 // а также управление соединением с хранилищем данных.
 //
-//go:generate minimock -i github.com/Nekrasov-Sergey/metrics-collector/internal/server/service.Repository -o ./mocks/repo.go -n RepoMock
+//go:generate minimock -i Repository -o ./mocks/repo.go -n RepoMock
 type Repository interface {
 	// UpdateMetric обновляет одну метрику в хранилище.
 	UpdateMetric(ctx context.Context, metric *types.Metric) error
