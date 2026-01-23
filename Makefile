@@ -24,13 +24,17 @@ test: gen
 	@golangci-lint run
 
 .PHONY: gen
-gen:
-	@echo "🧰 Генерация моков..."
+gen: gen-reset
+	@echo "🧰 Генерация файлов..."
 	@rm -rf internal/server/service/mocks
 	@mkdir -p internal/server/service/mocks
 	@rm -rf internal/server/delivery/rest/mocks
 	@mkdir -p internal/server/delivery/rest/mocks
 	@go generate ./...
+
+.PHONY: gen-reset
+gen-reset:
+	@go run ./cmd/reset/main.go
 
 .PHONY: cover
 cover:
