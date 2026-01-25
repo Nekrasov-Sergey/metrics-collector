@@ -1,0 +1,55 @@
+package pool
+
+import (
+	"errors"
+	"sync"
+)
+
+type resettable interface {
+	Reset()
+}
+
+type Pool[T resettable] struct {
+	pool  sync.Pool
+	newFn func() T
+}
+
+func New[T resettable](newFn func() T) (*Pool[T], error) {
+	if newFn == nil {
+		return nil, errors.New("функция создания объекта не может быть nil")
+	}
+
+	p := &Pool[T]{
+		newFn: newFn,
+	}
+
+	p.pool.New = func() any {
+		return newFn()
+	}
+
+	return p, nil
+}
+
+func (p *Pool[T]) Get() T {
+	if p == nil {
+		var zero T
+		return zero
+	}
+
+	if v := p.pool.Get(); v != nil {
+		if obj, ok := v.(T); ok {
+			return obj
+		}
+	}
+
+	return p.newFn()
+}
+
+func (p *Pool[T]) Put(obj T) {
+	if p == nil {
+		return
+	}
+
+	obj.Reset()
+	p.pool.Put(obj)
+}
