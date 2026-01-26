@@ -1,4 +1,4 @@
-package common
+package cryptoutil
 
 import (
 	"crypto/hmac"

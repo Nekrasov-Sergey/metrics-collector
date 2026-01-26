@@ -17,7 +17,9 @@ func (m *MemStorage) UpdateMetric(ctx context.Context, metric *types.Metric) err
 		if err != nil && !errors.Is(err, errcodes.ErrMetricNotFound) {
 			return err
 		}
-		*metric.Delta += utils.Deref(counterMetric.Delta)
+		if counterMetric != nil {
+			*metric.Delta += utils.Deref(counterMetric.Delta)
+		}
 	}
 
 	m.mu.Lock()

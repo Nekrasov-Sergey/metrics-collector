@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/common"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/cryptoutil"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func SignatureMiddleware(key string) gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 			expectedHex := c.GetHeader("HashSHA256")
-			isValid := common.VerifyHMACSHA256([]byte(key), bodyBytes, expectedHex)
+			isValid := cryptoutil.VerifyHMACSHA256([]byte(key), bodyBytes, expectedHex)
 			if !isValid {
 				logger.RespondError(c, errors.New("Хеш запроса недействителен"), http.StatusBadRequest)
 				return
@@ -50,7 +50,7 @@ func SignatureMiddleware(key string) gin.HandlerFunc {
 		c.Next()
 
 		if key != "" {
-			respHash := common.HMACSHA256([]byte(key), bw.body.Bytes())
+			respHash := cryptoutil.HMACSHA256([]byte(key), bw.body.Bytes())
 			c.Header("HashSHA256", respHash)
 		}
 	}

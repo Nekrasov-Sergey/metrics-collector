@@ -1,12 +1,17 @@
 .DEFAULT_GOAL := server
 
+LDFLAGS = -ldflags "\
+	-X main.buildVersion=1.0.0 \
+	-X 'main.buildDate=$$(date "+%Y-%m-%d %H:%M:%S")' \
+	-X main.buildCommit=$$(git rev-parse --short HEAD)"
+
 .PHONY: server
 server: build-server
 	@./cmd/server/server $(args)
 
 .PHONY: build-server
 build-server:
-	@go build -o ./cmd/server/server ./cmd/server/server.go
+	@go build ${LDFLAGS} -o ./cmd/server/server ./cmd/server/server.go
 
 .PHONY: agent
 agent: build-agent
@@ -14,7 +19,7 @@ agent: build-agent
 
 .PHONY: build-agent
 build-agent:
-	@go build -o ./cmd/agent/agent ./cmd/agent/agent.go
+	@go build ${LDFLAGS} -o ./cmd/agent/agent ./cmd/agent/agent.go
 
 .PHONY: test
 test: gen
