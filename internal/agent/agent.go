@@ -19,9 +19,9 @@ import (
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/common"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/cryptoutil"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
@@ -245,7 +245,7 @@ func (a *Agent) sendMetrics(ctx context.Context, metrics []types.Metric, w int) 
 		SetHeader("Content-Encoding", "gzip")
 
 	if a.config.Key != "" {
-		hashSHA256 := common.HMACSHA256([]byte(a.config.Key), metricsJSON)
+		hashSHA256 := cryptoutil.HMACSHA256([]byte(a.config.Key), metricsJSON)
 		req.SetHeader("HashSHA256", hashSHA256)
 	}
 

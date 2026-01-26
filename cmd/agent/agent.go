@@ -11,10 +11,23 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent"
 	agentconfig "github.com/Nekrasov-Sergey/metrics-collector/internal/config"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	buildinfo "github.com/Nekrasov-Sergey/metrics-collector/pkg/build_info"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	buildinfo.Print(types.BuildInfo{
+		Version: buildVersion,
+		Date:    buildDate,
+		Commit:  buildCommit,
+	})
 	if err := run(); err != nil {
 		log.Fatal().Err(err).Msg("Агент завершился с ошибкой")
 	}

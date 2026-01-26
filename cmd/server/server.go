@@ -19,10 +19,23 @@ import (
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/postgres"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
+	buildinfo "github.com/Nekrasov-Sergey/metrics-collector/pkg/build_info"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	buildinfo.Print(types.BuildInfo{
+		Version: buildVersion,
+		Date:    buildDate,
+		Commit:  buildCommit,
+	})
 	if err := run(); err != nil {
 		log.Fatal().Err(err).Msg("Сервер завершился с ошибкой")
 	}

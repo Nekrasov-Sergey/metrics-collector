@@ -31,25 +31,13 @@ func New[T resettable](newFn func() T) (*Pool[T], error) {
 }
 
 func (p *Pool[T]) Get() T {
-	if p == nil {
-		var zero T
-		return zero
-	}
-
 	if v := p.pool.Get(); v != nil {
-		if obj, ok := v.(T); ok {
-			return obj
-		}
+		return v.(T)
 	}
-
 	return p.newFn()
 }
 
 func (p *Pool[T]) Put(obj T) {
-	if p == nil {
-		return
-	}
-
 	obj.Reset()
 	p.pool.Put(obj)
 }
