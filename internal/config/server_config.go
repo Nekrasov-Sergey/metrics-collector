@@ -18,9 +18,10 @@ type ServerConfig struct {
 	FileStoragePath string         `env:"FILE_STORAGE_PATH"`
 	Restore         bool           `env:"RESTORE"`
 	DatabaseDSN     string         `env:"DATABASE_DSN"`
-	Key             string         `env:"KEY"`
+	SignKey         string         `env:"KEY"`
 	AuditFile       string         `env:"AUDIT_FILE"`
 	AuditURL        string         `env:"AUDIT_URL"`
+	CryptoKey       string         `env:"CRYPTO_KEY"`
 }
 
 func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
@@ -39,11 +40,13 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 
 	databaseDSN := flag.String("d", "", "адрес подключения к БД")
 
-	key := flag.String("k", "", "ключ для вычисления хеша")
+	signKey := flag.String("k", "", "ключ для вычисления хеша")
 
 	auditFile := flag.String("audit-file", "", "путь к файлу, в который сохраняются логи аудита")
 
 	auditURL := flag.String("audit-url", "", "полный URL, по которому отправляются логи аудита")
+
+	cryptoKey := flag.String("crypto-key", "", "путь до файла с приватным ключом")
 
 	flag.Parse()
 
@@ -53,9 +56,10 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 		FileStoragePath: utils.Deref(fileStoragePath),
 		Restore:         utils.Deref(restore),
 		DatabaseDSN:     utils.Deref(databaseDSN),
-		Key:             utils.Deref(key),
+		SignKey:         utils.Deref(signKey),
 		AuditFile:       utils.Deref(auditFile),
 		AuditURL:        utils.Deref(auditURL),
+		CryptoKey:       utils.Deref(cryptoKey),
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -68,9 +72,10 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 		Str("file_storage_path", cfg.FileStoragePath).
 		Bool("restore", cfg.Restore).
 		Str("database_dsn", cfg.DatabaseDSN).
-		Str("key", cfg.Key).
-		Str("auditFile", cfg.AuditFile).
-		Str("auditURL", cfg.AuditURL).
+		Str("key", cfg.SignKey).
+		Str("audit_file", cfg.AuditFile).
+		Str("audit_url", cfg.AuditURL).
+		Str("crypto_key", cfg.CryptoKey).
 		Msg("Загружена конфигурация сервера")
 
 	return &cfg, nil

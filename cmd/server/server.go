@@ -57,7 +57,7 @@ func run() (err error) {
 		return err
 	}
 
-	r := router.New(l, gin.ReleaseMode, cfg.Key)
+	r := router.New(l, gin.ReleaseMode, router.WithSignKey(cfg.SignKey), router.WithCryptoKey(cfg.CryptoKey))
 
 	var repo service.Repository
 	if cfg.DatabaseDSN != "" {
