@@ -18,6 +18,7 @@ type AgentConfig struct {
 	ReportInterval SecondDuration `env:"REPORT_INTERVAL"`
 	Key            string         `env:"KEY"`
 	RateLimit      int            `env:"RATE_LIMIT"`
+	CryptoKey      string         `env:"CRYPTO_KEY"`
 }
 
 func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
@@ -36,6 +37,8 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 
 	rateLimit := flag.Int("l", 1, "количество одновременно исходящих запросов на сервер")
 
+	cryptoKey := flag.String("crypto-key", "", "путь до файла с публичным ключом")
+
 	flag.Parse()
 
 	cfg := AgentConfig{
@@ -44,6 +47,7 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 		ReportInterval: reportInterval,
 		Key:            utils.Deref(key),
 		RateLimit:      utils.Deref(rateLimit),
+		CryptoKey:      utils.Deref(cryptoKey),
 	}
 
 	if err := env.Parse(&cfg); err != nil {
@@ -56,6 +60,7 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 		Str("report_interval", cfg.ReportInterval.String()).
 		Str("key", cfg.Key).
 		Int("rate_limit", cfg.RateLimit).
+		Str("crypto_key", cfg.CryptoKey).
 		Msg("Загружена конфигурация агента")
 
 	return &cfg, nil

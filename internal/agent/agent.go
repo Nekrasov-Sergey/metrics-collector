@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"math"
-	"math/rand/v2"
+	mrand "math/rand/v2"
 	"net/url"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -123,7 +128,7 @@ func (a *Agent) Poll(ctx context.Context, metricsChan chan<- []types.Metric, pol
 			metrics = append(metrics, types.Metric{
 				Name:  types.RandomValue,
 				MType: types.Gauge,
-				Value: utils.Ptr(rand.Float64()),
+				Value: utils.Ptr(mrand.Float64()),
 			})
 			metrics = append(metrics, types.Metric{
 				Name:  types.PollCount,
@@ -227,9 +232,15 @@ func (a *Agent) sendMetrics(ctx context.Context, metrics []types.Metric, w int) 
 		return
 	}
 
-	compressedMetrics, err := a.getCompressedMetrics(metricsJSON)
+	compressedMetrics, err := a.compressMetrics(metricsJSON)
 	if err != nil {
 		a.logger.Error().Err(err).Int("воркер", w).Msg("Не удалось сжать метрики")
+		return
+	}
+
+	encryptedMetrics, err := a.encryptMetrics(compressedMetrics)
+	if err != nil {
+		a.logger.Error().Err(err).Int("воркер", w).Msg("Не удалось зашифровать метрики")
 		return
 	}
 
@@ -241,7 +252,7 @@ func (a *Agent) sendMetrics(ctx context.Context, metrics []types.Metric, w int) 
 
 	req := a.client.R().
 		SetContext(ctx).
-		SetBody(compressedMetrics).
+		SetBody(encryptedMetrics).
 		SetHeader("Content-Encoding", "gzip")
 
 	if a.config.Key != "" {
@@ -290,7 +301,7 @@ func (a *Agent) sendMetrics(ctx context.Context, metrics []types.Metric, w int) 
 	a.logger.Error().Int("воркер", w).Msg("Все попытки отправки исчерпаны")
 }
 
-func (a *Agent) getCompressedMetrics(metricsJSON []byte) ([]byte, error) {
+func (a *Agent) compressMetrics(metricsJSON []byte) ([]byte, error) {
 	var b bytes.Buffer
 	zw := gzip.NewWriter(&b)
 
@@ -303,6 +314,39 @@ func (a *Agent) getCompressedMetrics(metricsJSON []byte) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
+}
+
+func (a *Agent) encryptMetrics(metrics []byte) ([]byte, error) {
+	if a.config.CryptoKey == "" {
+		return metrics, nil
+	}
+
+	certificateBytes, err := os.ReadFile(a.config.CryptoKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "не удалось прочитать файл с публичным ключом")
+	}
+
+	pemBlock, _ := pem.Decode(certificateBytes)
+	if pemBlock == nil {
+		return nil, errors.New("не удалось декодировать pem-блок сертификата")
+	}
+
+	certificate, err := x509.ParseCertificate(pemBlock.Bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "не удалось распарсить x509 сертификат")
+	}
+
+	publicKey, ok := certificate.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("публичный ключ в сертификате не является rsa ключом")
+	}
+
+	encryptedMetrics, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, metrics)
+	if err != nil {
+		return nil, errors.Wrap(err, "не удалось зашифровать метрики rsa ключом")
+	}
+
+	return encryptedMetrics, nil
 }
 
 type getMetricValue func(memStats *runtime.MemStats) *float64

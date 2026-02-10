@@ -220,7 +220,7 @@ func TestHandler_updateMetrics(t *testing.T) {
 			}
 			tt.build(mock)
 
-			r := router.New(l, gin.TestMode, "")
+			r := router.New(l, gin.TestMode)
 
 			s := service.New(ctx, mock.repo, l)
 			h := rest.New(s, mock.audit, l)
