@@ -34,7 +34,7 @@ func main() {
 }
 
 func run() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
 	l := logger.New()
@@ -45,6 +45,10 @@ func run() error {
 		return err
 	}
 
-	a := agent.New(cfg, client, l)
+	a, err := agent.New(cfg, client, l)
+	if err != nil {
+		return err
+	}
+
 	return a.Run(ctx)
 }

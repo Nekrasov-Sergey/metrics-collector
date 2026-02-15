@@ -1,8 +1,9 @@
 package pool
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type resettable interface {

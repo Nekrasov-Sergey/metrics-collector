@@ -42,7 +42,7 @@ func main() {
 }
 
 func run() (err error) {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
 	l := logger.New()
@@ -57,7 +57,10 @@ func run() (err error) {
 		return err
 	}
 
-	r := router.New(l, gin.ReleaseMode, router.WithSignKey(cfg.SignKey), router.WithCryptoKey(cfg.CryptoKey))
+	r, err := router.New(l, gin.ReleaseMode, router.WithSignKey(cfg.SignKey), router.WithCryptoKey(cfg.CryptoKey))
+	if err != nil {
+		return err
+	}
 
 	var repo service.Repository
 	if cfg.DatabaseDSN != "" {
@@ -105,6 +108,10 @@ func run() (err error) {
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return err
+	}
+
+	if cfg.DatabaseDSN == "" && cfg.StoreInterval > 0 {
+		s.SaveMetricsToFile(shutdownCtx)
 	}
 
 	l.Info().Msg("Сервер остановлен")

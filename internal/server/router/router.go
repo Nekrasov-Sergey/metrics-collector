@@ -4,6 +4,8 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+
+	cryptokeys "github.com/Nekrasov-Sergey/metrics-collector/pkg/crypto_keys"
 )
 
 type options struct {
@@ -25,7 +27,7 @@ func WithCryptoKey(cryptoKey string) Option {
 	}
 }
 
-func New(logger zerolog.Logger, mode string, opts ...Option) *gin.Engine {
+func New(logger zerolog.Logger, mode string, opts ...Option) (*gin.Engine, error) {
 	gin.SetMode(mode)
 
 	o := &options{}
@@ -34,8 +36,13 @@ func New(logger zerolog.Logger, mode string, opts ...Option) *gin.Engine {
 		opt(o)
 	}
 
+	privateKey, err := cryptokeys.GetPrivateKey(o.cryptoKey)
+	if err != nil {
+		return nil, err
+	}
+
 	r := gin.New()
-	r.Use(gin.Recovery(), LoggerMiddleware(logger), DecryptMiddleware(o.cryptoKey), CompressMiddleware(), SignatureMiddleware(o.signKey))
+	r.Use(gin.Recovery(), LoggerMiddleware(logger), DecryptMiddleware(privateKey), CompressMiddleware(), SignatureMiddleware(o.signKey))
 	pprof.Register(r)
-	return r
+	return r, nil
 }
