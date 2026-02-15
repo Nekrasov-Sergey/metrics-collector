@@ -143,7 +143,8 @@ func TestHandler_updateMetricByPath(t *testing.T) {
 			}
 			tt.build(mock)
 
-			r := router.New(l, gin.TestMode)
+			r, err := router.New(l, gin.TestMode)
+			require.NoError(t, err)
 
 			s := service.New(ctx, mock.repo, l)
 			h := rest.New(s, mock.audit, l)
