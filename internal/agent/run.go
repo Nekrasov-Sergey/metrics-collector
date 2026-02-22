@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"fmt"
 	"math"
 	mrand "math/rand/v2"
@@ -252,6 +253,7 @@ func (a *Agent) sendMetrics(ctx context.Context, metrics []types.Metric, w int) 
 	req := a.client.R().
 		SetContext(ctx).
 		SetBody(encryptedMetrics).
+		SetHeader("X-Real-IP", a.localIP).
 		SetHeader("Content-Encoding", "gzip")
 
 	if a.config.Key != "" {
@@ -320,7 +322,7 @@ func (a *Agent) encryptMetrics(metrics []byte) ([]byte, error) {
 		return metrics, nil
 	}
 
-	encryptedMetrics, err := rsa.EncryptPKCS1v15(rand.Reader, a.publicKey, metrics)
+	encryptedMetrics, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, a.publicKey, metrics, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "не удалось зашифровать метрики rsa ключом")
 	}

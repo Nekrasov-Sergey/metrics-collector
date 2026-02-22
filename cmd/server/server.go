@@ -57,7 +57,13 @@ func run() (err error) {
 		return err
 	}
 
-	r, err := router.New(l, gin.ReleaseMode, router.WithSignKey(cfg.SignKey), router.WithCryptoKey(cfg.CryptoKey))
+	r, err := router.New(
+		l,
+		gin.ReleaseMode,
+		router.WithSignKey(cfg.SignKey),
+		router.WithCryptoKey(cfg.CryptoKey),
+		router.WithTrustedSubnet(cfg.TrustedSubnet),
+	)
 	if err != nil {
 		return err
 	}

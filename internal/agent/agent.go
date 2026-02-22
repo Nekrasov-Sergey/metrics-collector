@@ -8,6 +8,7 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	cryptokeys "github.com/Nekrasov-Sergey/metrics-collector/pkg/crypto_keys"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/network"
 )
 
 // Agent реализует агент сбора и отправки метрик.
@@ -18,6 +19,7 @@ type Agent struct {
 	client    *resty.Client
 	logger    zerolog.Logger
 	publicKey *rsa.PublicKey
+	localIP   string
 }
 
 func New(config *config.AgentConfig, client *resty.Client, logger zerolog.Logger) (*Agent, error) {
@@ -32,6 +34,12 @@ func New(config *config.AgentConfig, client *resty.Client, logger zerolog.Logger
 		return nil, err
 	}
 	agent.publicKey = publicKey
+
+	localIP, err := network.GetLocalIP()
+	if err != nil {
+		return nil, err
+	}
+	agent.localIP = localIP
 
 	return agent, nil
 }
