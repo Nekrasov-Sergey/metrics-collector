@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"io"
 	"net/http"
 
@@ -28,7 +29,7 @@ func DecryptMiddleware(privateKey *rsa.PrivateKey) gin.HandlerFunc {
 			return
 		}
 
-		decryptedMessage, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedMessage)
+		decryptedMessage, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, encryptedMessage, nil)
 		if err != nil {
 			logger.RespondError(c, errors.New("не удалось расшифровать тело запроса"), http.StatusBadRequest)
 			return

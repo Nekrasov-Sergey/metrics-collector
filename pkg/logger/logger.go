@@ -51,7 +51,7 @@ func RespondError(c *gin.Context, err error, status int) {
 		return
 	}
 
-	if status >= 500 {
+	if status == http.StatusForbidden || status >= http.StatusInternalServerError {
 		c.AbortWithStatusJSON(status, gin.H{
 			"error": http.StatusText(status),
 		})

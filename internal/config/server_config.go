@@ -24,6 +24,7 @@ type ServerConfig struct {
 	AuditFile       string         `env:"AUDIT_FILE" json:"audit_file"`
 	AuditURL        string         `env:"AUDIT_URL" json:"audit_url"`
 	CryptoKey       string         `env:"CRYPTO_KEY" json:"crypto_key"`
+	TrustedSubnet   string         `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
@@ -51,6 +52,7 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 	auditFile := flag.String("audit-file", "", "путь к файлу аудита")
 	auditURL := flag.String("audit-url", "", "URL для отправки логов аудита")
 	cryptoKey := flag.String("crypto-key", "", "путь до файла с приватным ключом")
+	trustedSubnet := flag.String("t", "", "строковое представление бесклассовой адресации (CIDR)")
 
 	flag.Parse()
 
@@ -84,6 +86,8 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 			cfg.AuditURL = utils.Deref(auditURL)
 		case "crypto-key":
 			cfg.CryptoKey = utils.Deref(cryptoKey)
+		case "t":
+			cfg.TrustedSubnet = utils.Deref(trustedSubnet)
 		}
 	})
 
@@ -101,6 +105,7 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 		Str("audit_file", cfg.AuditFile).
 		Str("audit_url", cfg.AuditURL).
 		Str("crypto_key", cfg.CryptoKey).
+		Str("trusted_subnet", cfg.TrustedSubnet).
 		Msg("Загружена конфигурация сервера")
 
 	return &cfg, nil
