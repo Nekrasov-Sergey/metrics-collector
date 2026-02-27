@@ -3,11 +3,9 @@ package logger
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -42,24 +40,4 @@ func New() zerolog.Logger {
 
 	log.Logger = logger
 	return logger
-}
-
-// RespondError обрабатывает ошибку и формирует JSON-ответ
-func RespondError(c *gin.Context, err error, status int) {
-	if err == nil {
-		c.AbortWithStatus(status)
-		return
-	}
-
-	if status == http.StatusForbidden || status >= http.StatusInternalServerError {
-		c.AbortWithStatusJSON(status, gin.H{
-			"error": http.StatusText(status),
-		})
-	} else {
-		c.AbortWithStatusJSON(status, gin.H{
-			"error": err.Error(),
-		})
-	}
-
-	_ = c.Error(err)
 }

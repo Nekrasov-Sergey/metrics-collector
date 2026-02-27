@@ -1,0 +1,42 @@
+package router
+
+import (
+	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"io"
+	"net/http"
+
+	"github.com/pkg/errors"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/response"
+)
+
+// DecryptMiddleware расшифровывает тело запроса с помощью rsa
+func DecryptMiddleware(privateKey *rsa.PrivateKey) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if privateKey == nil {
+			c.Next()
+			return
+		}
+
+		encryptedMessage, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			response.RespondError(c, errors.New("не удалось прочитать тело запроса"), http.StatusBadRequest)
+			return
+		}
+
+		decryptedMessage, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, encryptedMessage, nil)
+		if err != nil {
+			response.RespondError(c, errors.New("не удалось расшифровать тело запроса"), http.StatusBadRequest)
+			return
+		}
+
+		c.Request.Body = io.NopCloser(bytes.NewReader(decryptedMessage))
+
+		c.Next()
+	}
+}

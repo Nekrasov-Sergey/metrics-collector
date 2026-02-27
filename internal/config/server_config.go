@@ -16,6 +16,7 @@ import (
 // ServerConfig содержит конфигурацию сервера метрик.
 type ServerConfig struct {
 	Addr            string         `env:"ADDRESS" json:"address"`
+	GRPCAddr        string         `env:"GRPC_ADDRESS" json:"grpc_address"`
 	StoreInterval   SecondDuration `env:"STORE_INTERVAL" json:"store_interval"`
 	FileStoragePath string         `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
 	Restore         bool           `env:"RESTORE" json:"restore"`
@@ -30,6 +31,7 @@ type ServerConfig struct {
 func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 	cfg := ServerConfig{
 		Addr:            "localhost:8080",
+		GRPCAddr:        "localhost:8081",
 		StoreInterval:   SecondDuration(300 * time.Second),
 		FileStoragePath: "./internal/server/repository/saved_data/metrics.json",
 		Restore:         false,
@@ -41,6 +43,8 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 
 	var addr NetAddress
 	flag.Var(&addr, "a", "адрес HTTP-сервера")
+
+	grpcAddr := flag.String("g", "", "адрес GRPC-сервера")
 
 	var storeInterval SecondDuration
 	flag.Var(&storeInterval, "i", "частота сохранения показаний сервера")
@@ -70,6 +74,8 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 		switch f.Name {
 		case "a":
 			cfg.Addr = addr.String()
+		case "g":
+			cfg.GRPCAddr = utils.Deref(grpcAddr)
 		case "i":
 			cfg.StoreInterval = storeInterval
 		case "f":
@@ -97,6 +103,7 @@ func NewServerConfig(logger zerolog.Logger) (*ServerConfig, error) {
 
 	logger.Info().
 		Str("address", cfg.Addr).
+		Str("grpc_address", cfg.GRPCAddr).
 		Str("store_interval", cfg.StoreInterval.String()).
 		Str("file_storage_path", cfg.FileStoragePath).
 		Bool("restore", cfg.Restore).

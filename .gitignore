@@ -26,3 +26,5 @@ internal/server/repository/saved_data
 cover.html
 
 **/mocks/
+
+internal/profiles

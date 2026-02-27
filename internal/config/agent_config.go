@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/rsa"
 	"flag"
 	"os"
 	"time"
@@ -10,25 +11,36 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
+	cryptokeys "github.com/Nekrasov-Sergey/metrics-collector/pkg/crypto_keys"
+	"github.com/Nekrasov-Sergey/metrics-collector/pkg/network"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/utils"
 )
 
 // AgentConfig содержит конфигурацию агента сбора метрик.
 type AgentConfig struct {
-	Addr           string         `env:"ADDRESS" json:"address"`
+	HTTPAddr       string         `env:"ADDRESS" json:"address"`
+	GRPCAddr       string         `env:"GRPC_ADDRESS" json:"grpc_address"`
 	PollInterval   SecondDuration `env:"POLL_INTERVAL" json:"poll_interval"`
 	ReportInterval SecondDuration `env:"REPORT_INTERVAL" json:"report_interval"`
 	Key            string         `env:"KEY" json:"key"`
 	RateLimit      int            `env:"RATE_LIMIT" json:"rate_limit"`
 	CryptoKey      string         `env:"CRYPTO_KEY" json:"crypto_key"`
+	PublicKey      *rsa.PublicKey
+	LocalIP        string
 }
 
 func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
+	localIP, err := network.GetLocalIP()
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := AgentConfig{
-		Addr:           "localhost:8080",
+		HTTPAddr:       "localhost:8080",
 		PollInterval:   SecondDuration(2 * time.Second),
 		ReportInterval: SecondDuration(10 * time.Second),
 		RateLimit:      1,
+		LocalIP:        localIP,
 	}
 
 	var configPath string
@@ -37,6 +49,8 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 
 	var addr NetAddress
 	flag.Var(&addr, "a", "адрес HTTP-сервера")
+
+	grpcAddr := flag.String("g", "", "адрес GRPC-сервера")
 
 	var pollInterval SecondDuration
 	flag.Var(&pollInterval, "p", "частота опроса метрик из пакета runtime в секундах")
@@ -63,7 +77,9 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "a":
-			cfg.Addr = addr.String()
+			cfg.HTTPAddr = addr.String()
+		case "g":
+			cfg.GRPCAddr = utils.Deref(grpcAddr)
 		case "p":
 			cfg.PollInterval = pollInterval
 		case "r":
@@ -81,8 +97,15 @@ func NewAgentConfig(logger zerolog.Logger) (*AgentConfig, error) {
 		return nil, errors.Wrap(err, "не удалось распарсить переменные окружения в конфиг")
 	}
 
+	publicKey, err := cryptokeys.GetPublicKey(cfg.CryptoKey)
+	if err != nil {
+		return nil, err
+	}
+	cfg.PublicKey = publicKey
+
 	logger.Info().
-		Str("address", cfg.Addr).
+		Str("address", cfg.HTTPAddr).
+		Str("grpc_address", cfg.GRPCAddr).
 		Str("poll_interval", cfg.PollInterval.String()).
 		Str("report_interval", cfg.ReportInterval.String()).
 		Str("key", cfg.Key).

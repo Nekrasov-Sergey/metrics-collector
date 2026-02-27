@@ -1,51 +1,72 @@
-package agent_test
+package handler_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/gojuno/minimock/v3"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent/grpc"
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/handler"
 	handlerMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/handler/mocks"
 
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/agent"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	serviceMocks "github.com/Nekrasov-Sergey/metrics-collector/internal/server/service/mocks"
 	"github.com/Nekrasov-Sergey/metrics-collector/pkg/logger"
 )
 
-func TestRunAgent(t *testing.T) {
+func TestHandler_ping(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
 	l := logger.New()
 
+	type args struct {
+		url string
+	}
 	type buildMock struct {
 		repo  *serviceMocks.RepoMock
 		audit *handlerMocks.AuditMock
 	}
+	type want struct {
+		code int
+		body string
+	}
 	tests := []struct {
 		name  string
+		args  args
 		build func(*buildMock)
+		want  want
 	}{
 		{
-			name: "Success",
+			name: "SuccessPing",
+			args: args{
+				url: "/ping",
+			},
 			build: func(m *buildMock) {
-				m.repo.UpdateMetricsMock.Return(nil)
-				m.repo.GetMetricsMock.Return(nil, nil)
-				m.audit.InfoMock.Return()
+				m.repo.PingMock.Return(nil)
+			},
+			want: want{
+				code: http.StatusOK,
+			},
+		},
+		{
+			name: "ErrorPing",
+			args: args{
+				url: "/ping",
+			},
+			build: func(m *buildMock) {
+				m.repo.PingMock.Return(errors.New("БД недоступна"))
+			},
+			want: want{
+				code: http.StatusInternalServerError,
 			},
 		},
 	}
@@ -62,32 +83,21 @@ func TestRunAgent(t *testing.T) {
 
 			r, err := router.New(l, gin.TestMode)
 			require.NoError(t, err)
+
 			s := service.New(ctx, mock.repo, l)
 			h := handler.New(s, mock.audit, l)
 			h.RegisterRoutes(r)
+
 			srv := httptest.NewServer(r)
 			defer srv.Close()
 
-			agentCfg := &config.AgentConfig{
-				HTTPAddr:       strings.TrimPrefix(srv.URL, "http://"),
-				PollInterval:   config.SecondDuration(50 * time.Millisecond),
-				ReportInterval: config.SecondDuration(100 * time.Millisecond),
-				RateLimit:      5,
+			client := resty.New()
+			resp, err := client.R().Get(srv.URL + tt.args.url)
+			require.NoError(t, err)
+			require.Equal(t, tt.want.code, resp.StatusCode())
+			if tt.want.body != "" {
+				require.Contains(t, resp.String(), tt.want.body)
 			}
-
-			httpClient := resty.New()
-
-			grpcClient, err := grpc.New(l)
-			require.NoError(t, err)
-			defer grpcClient.Close()
-
-			a := agent.New(agentCfg, httpClient, grpcClient.Client, logger.New())
-
-			runCtx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
-			defer cancel()
-
-			err = a.Run(runCtx)
-			require.NoError(t, err)
 		})
 	}
 }
