@@ -1,10 +1,12 @@
 package network
 
 import (
+	"context"
 	"net"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/peer"
 )
 
 func ParseCIDR(cidr string) (*net.IPNet, error) {
@@ -37,4 +39,18 @@ func GetLocalIP() (string, error) {
 	}
 
 	return addr.IP.String(), nil
+}
+
+func GetRemoteIP(ctx context.Context) string {
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return ""
+	}
+
+	addr, ok := p.Addr.(*net.TCPAddr)
+	if !ok {
+		return ""
+	}
+
+	return addr.IP.String()
 }

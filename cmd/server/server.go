@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -13,11 +14,12 @@ import (
 
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/audit"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/config"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/server"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/rest"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/grpc"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/handler"
+	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/delivery/http/router"
 	memstorage "github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/mem_storage"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/repository/postgres"
-	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/router"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/server/service"
 	"github.com/Nekrasov-Sergey/metrics-collector/internal/types"
 	buildinfo "github.com/Nekrasov-Sergey/metrics-collector/pkg/build_info"
@@ -87,39 +89,81 @@ func run() (err error) {
 		service.WithRestore(cfg.Restore),
 		service.WithFileStoragePath(cfg.FileStoragePath),
 	)
-	h := rest.New(s, auditLogger, l, rest.WithStoreInterval(cfg.StoreInterval))
+
+	h := handler.New(s, auditLogger, l, handler.WithStoreInterval(cfg.StoreInterval))
 	h.RegisterRoutes(r)
 
 	if cfg.DatabaseDSN == "" {
 		h.StartMetricSaver(ctx)
 	}
 
-	srv := server.New(r, cfg.Addr, l)
+	httpSrv := http.New(r, cfg.Addr, l)
 
-	serverErr := make(chan error, 1)
+	grpcSrv, err := grpc.New(s, auditLogger, l, grpc.WithGRPCAddress(cfg.GRPCAddr), grpc.WithTrustedSubnet(cfg.TrustedSubnet))
+	if err != nil {
+		return err
+	}
+
+	errCh := make(chan error, 2)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		serverErr <- srv.Run()
+		defer wg.Done()
+		if err := httpSrv.Run(); err != nil {
+			errCh <- err
+		}
 	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := grpcSrv.Run(); err != nil {
+			errCh <- err
+		}
+	}()
+
+	var runErr error
 
 	select {
 	case <-ctx.Done():
-	case err := <-serverErr:
-		if err != nil {
-			return err
-		}
+		l.Info().Msg("Получен сигнал завершения")
+	case err := <-errCh:
+		runErr = err
+		cancel()
 	}
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		return err
+	errChShutdown := make(chan error, 2)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+			errChShutdown <- err
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := grpcSrv.Shutdown(shutdownCtx); err != nil {
+			errChShutdown <- err
+		}
+	}()
+
+	wg.Wait()
+	close(errChShutdown)
+
+	for e := range errChShutdown {
+		runErr = multierr.Append(runErr, e)
 	}
 
 	if cfg.DatabaseDSN == "" && cfg.StoreInterval > 0 {
 		s.SaveMetricsToFile(shutdownCtx)
 	}
 
-	l.Info().Msg("Сервер остановлен")
-	return nil
+	return runErr
 }

@@ -22,7 +22,7 @@ build-agent:
 	@go build ${LDFLAGS} -o ./cmd/agent/agent ./cmd/agent/agent.go
 
 .PHONY: test
-test: gen
+test: gen fmt
 	@echo "🔍 Запуск тестов..."
 	@go test -race ./...
 	@echo "📐 Запуск линтера..."
@@ -30,12 +30,22 @@ test: gen
 
 .PHONY: gen
 gen: gen-reset
-	@echo "🧰 Генерация файлов..."
+	@echo "🧰 Генерация моков..."
 	@rm -rf internal/server/service/mocks
 	@mkdir -p internal/server/service/mocks
-	@rm -rf internal/server/delivery/rest/mocks
-	@mkdir -p internal/server/delivery/rest/mocks
+	@rm -rf internal/server/delivery/http/handler/mocks
+	@mkdir -p internal/server/delivery/http/handler/mocks
 	@go generate ./...
+
+.PHONY: proto-gen
+proto-gen:
+	@echo "🧰 Генерация protobuf и gRPC кода..."
+	@rm -rf internal/proto
+	@mkdir -p internal/proto
+	@protoc \
+    --go_out=. --go_opt=module=github.com/Nekrasov-Sergey/metrics-collector \
+    --go-grpc_out=. --go-grpc_opt=module=github.com/Nekrasov-Sergey/metrics-collector \
+    api/proto/metrics.proto
 
 .PHONY: gen-reset
 gen-reset:
